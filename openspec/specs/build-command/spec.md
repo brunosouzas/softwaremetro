@@ -116,11 +116,15 @@ The output folder SHALL NOT be served while a build runs. Only `full/`, `staff/`
 - **THEN** it says not to serve the output folder during a build and which entries to publish
 
 ### Requirement: Writes
-The command reads only the catalogue folder and the skill set's files and SHALL NOT open network connections. It SHALL write only inside the output folder. Astro's working copy, generated files and every cache (Astro `cacheDir` and Vite `cacheDir`) SHALL be under the staging folder. It SHALL NOT write in the catalogue folder, the skills folders, the installed stackledger package, the system temporary directory or the user's home folder.
+The build reads only the catalogue folder and the skill set's files. The build connects to no host; Astro's Fonts API opens a server during the build, which stackledger binds to loopback (127.0.0.1). It SHALL write only inside the output folder, with Astro's working copy, generated files and every cache (Astro's and Vite's `cacheDir`) under the staging folder, and SHALL NOT write in the catalogue or skills folders, the installed package, the system temporary directory or the user's home folder.
 
 #### Scenario: Sandboxed build
-- **WHEN** the command runs with `--skills` under the Node.js permission model with read access to the catalogue folder, the skills folder and the package, write access only to `--out`, and `--allow-addons --allow-child-process --allow-worker`
-- **THEN** both sites are built with their Skills pages, and child processes, which the model does not restrict, are outside this check
+- **WHEN** the command runs with `--skills` under the Node.js permission model with read access to the catalogue folder, the skills folder and the package, write access only to `--out`, and `--allow-addons --allow-child-process --allow-worker`, with `--allow-net` where Node has it and a network trap preloaded that refuses any host other than loopback and reports every server the process opens
+- **THEN** both sites are built with their Skills pages, no connection to a host other than loopback is attempted, no server listens on an address other than loopback, and child processes, which the model does not restrict, are outside this check
+
+#### Scenario: Font server on loopback
+- **WHEN** a build runs
+- **THEN** every server the build opens listens on 127.0.0.1 and none remains open after the build
 
 ### Requirement: Build report
 stderr SHALL show, in order: with a catalogue error or warning, one line with both counts and a hint to run `stackledger validate`; the map's suggestion, unrouted-hop and unused-layout lines as `stackledger map` writes them for `full`; the lines of "Skills build report"; one line per site built with its folder and page count; a last line saying the folders must be served behind an identity-aware proxy. A catalogue with errors SHALL still be built, with exit 0.

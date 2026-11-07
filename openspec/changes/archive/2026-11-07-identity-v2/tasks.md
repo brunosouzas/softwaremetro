@@ -55,7 +55,7 @@ Levels: unit and integration are vitest (`npm test`, after `npm run build`), e2e
 
 ## 8. Renders before and after (done by the parent session)
 
-- [ ] 8.1 Before/after renders of the home, the map page (light and dark, labels included), a component page, the How it works diagram and the banner, shown to the owner; group 6 waits for the approval. Verified by the owner's approval recorded in the PR.
+- [x] 8.1 Before/after renders of the home, the map page (light and dark, labels included), a component page, the How it works diagram and the banner, shown to the owner; group 6 waits for the approval. Verified by the owner's approval recorded in the PR. Evidence: the owner approved the previews in the AB#303 round ("as imagens que vc mandou anteriormente estao aprovadas"); the parent compared the final renders of the home, the map page and a component page in light and dark with those previews (same look, labels in place) and showed them in chat; the banner is pixel-identical (8.2).
 - [x] 8.2 One-time banner check: show the built `home-banner.svg` and the approved `openspec/changes/identity-v2/approved/home-banner-preview.svg` each through an `img` 1200 × 420 CSS pixels wide in Chrome, screenshot both and compare pixel for pixel (design §6.5). Verified by the two screenshots and the comparison result in the PR evidence; not a test, as the approved files move with the archive. Done: both screenshots are pixel-identical (PNG sha1 `c55b4d647cbabfb9b185a2880fa1f2d1b3fd26f6`).
 
 ## 9. Full checks
@@ -67,4 +67,4 @@ Levels: unit and integration are vitest (`npm test`, after `npm run build`), e2e
 
 ## 10. Archive
 
-- [ ] 10.1 After the code review and before the PR is marked ready: `openspec archive identity-v2 -y`, then `openspec validate --all --strict`. Expected: the archive succeeds and every spec is valid.
+- [x] 10.1 After the code review and before the PR is marked ready: `openspec archive identity-v2 -y`, then `openspec validate --all --strict`. Expected: the archive succeeds and every spec is valid.
