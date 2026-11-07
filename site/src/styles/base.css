@@ -296,7 +296,6 @@ code {
   padding: 0.35rem 0.9rem;
   border: var(--frame-outline);
   border-radius: var(--radius);
-  box-shadow: var(--frame-shadow);
   background: transparent;
   color: var(--color-text-dark);
   font: inherit;
@@ -390,7 +389,6 @@ tbody tr:last-child td {
   border: var(--frame-outline);
   border-radius: var(--radius);
   background: var(--color-body);
-  box-shadow: var(--frame-shadow);
 }
 
 .plain-list {
@@ -415,7 +413,6 @@ tbody tr:last-child td {
   padding: 0 0.6rem;
   border: var(--frame-outline);
   border-radius: 1rem;
-  box-shadow: var(--frame-shadow);
   font-size: 0.9rem;
 }
 

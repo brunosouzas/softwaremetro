@@ -302,33 +302,78 @@ for (const [how, set] of [
   });
 }
 
+// The frame of each theme: ink in light, the dark surface's muted colour in dark; no shadow, no rim.
+const FRAME = {
+  light: { width: '3px', style: 'solid', color: 'rgb(18, 18, 18)', shadow: 'none' },
+  dark: { width: '3px', style: 'solid', color: 'rgb(173, 167, 157)', shadow: 'none' },
+} as const;
+// The body colour of each theme (#F6F3EC, #121110) and stackledger's accent (#3B5BDB, #7D8CFF).
+const BODY = { light: 'rgb(246, 243, 236)', dark: 'rgb(18, 17, 16)' } as const;
+const ACCENT = { light: 'rgb(59, 91, 219)', dark: 'rgb(125, 140, 255)' } as const;
+
 test('Card frame in light', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/full/');
-  expect(await frameOf(page, '.card')).toEqual({ width: '3px', style: 'solid', color: 'rgb(10, 16, 51)', shadow: 'rgb(10, 16, 51) 4px 4px 0px 0px' });
-  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(255, 255, 255)');
+  expect(await frameOf(page, '.card')).toEqual(FRAME.light);
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(BODY.light);
 });
 
 test('Card frame in dark', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/full/');
-  expect(await frameOf(page, '.card')).toEqual({ width: '3px', style: 'solid', color: 'rgb(10, 16, 51)', shadow: 'rgb(238, 242, 255) 0px 0px 0px 1px, rgb(76, 92, 184) 4px 4px 0px 0px' });
-  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(28, 28, 28)');
+  expect(await frameOf(page, '.card')).toEqual(FRAME.dark);
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(BODY.dark);
 });
 
-test('Pressed chip keeps the dark rim', async ({ page }) => {
-  for (const [scheme, shadow] of [['light', 'none'], ['dark', 'rgb(238, 242, 255) 0px 0px 0px 1px']] as const) {
+test('Pressed button keeps its frame', async ({ page }) => {
+  for (const scheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto('/full/map/');
     const chip = page.locator('.line-chips .btn').first();
+    await chip.hover();
+    expect(await frameOf(page, '.line-chips .btn'), `${scheme} hovered`).toEqual(FRAME[scheme]);
     await chip.click();
     await expect(chip).toHaveAttribute('aria-pressed', 'true');
-    expect((await frameOf(page, '.line-chips .btn[aria-pressed="true"]')).shadow, scheme).toBe(shadow);
+    expect(await frameOf(page, '.line-chips .btn[aria-pressed="true"]'), `${scheme} pressed`).toEqual(FRAME[scheme]);
+  }
+});
+
+// catalogue-site "Site tokens from the design system": the text over primary is the body colour of its theme.
+test('Colour on primary', async ({ page }) => {
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/full/map/');
+    const button = page.getByRole('button', { name: 'Zoom in' });
+    await button.hover();
+    // The button's colour transition is 0.2s.
+    await expect.poll(() => button.evaluate(element => getComputedStyle(element).color), scheme).toBe(BODY[scheme]);
+  }
+});
+
+test('Accent readable on the page', async ({ page }) => {
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/full/');
+    const colours = await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.style.setProperty('color', 'var(--color-accent)');
+      document.body.append(probe);
+      const accent = getComputedStyle(probe).color;
+      probe.remove();
+      return { accent, body: getComputedStyle(document.body).backgroundColor };
+    });
+    expect(colours, scheme).toEqual({ accent: ACCENT[scheme], body: BODY[scheme] });
+    const luminance = (rgb: string) => {
+      const [r, g, b] = rgb.match(/\d+/g)!.slice(0, 3).map(Number).map(value => { const c = value / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+      return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+    };
+    const [high, low] = [luminance(colours.accent), luminance(colours.body)].sort((a, b) => b - a);
+    expect((high! + 0.05) / (low! + 0.05), scheme).toBeGreaterThanOrEqual(4.5);
   }
 });
 
 test('Focus still visible', async ({ page }) => {
-  for (const [scheme, accent] of [['light', 'rgb(0, 15, 159)'], ['dark', 'rgb(157, 168, 255)']] as const) {
+  for (const [scheme, accent] of [['light', ACCENT.light], ['dark', ACCENT.dark]] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto('/full/map/');
     const chips = page.locator('.line-chips .btn');

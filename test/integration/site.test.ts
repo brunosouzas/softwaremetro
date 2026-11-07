@@ -178,15 +178,37 @@ function themeVar(site: string, name: string): { light: string | undefined; dark
   return { light, dark };
 }
 const accents = (site: string) => themeVar(site, '--color-accent');
+const DEFAULT_ACCENTS = { light: 'var(--ds-brand-light-stackledger-accent)', dark: 'var(--ds-brand-dark-stackledger-accent)' };
+/** A theme's value of a custom property with every var() resolved through the site's :root rules (the
+ * design system's variables are all top-level :root values). */
+function resolved(site: string, name: string, theme: 'light' | 'dark'): string | undefined {
+  let value = themeVar(site, name)[theme] ?? themeVar(site, name).light;
+  for (let depth = 0; value?.startsWith('var(') && depth < 10; depth++) value = themeVar(site, /^var\((--[\w-]+)\)$/.exec(value)![1]!).light;
+  return value;
+}
+/** The value of a custom property under prefers-color-scheme: dark when the reader made no choice. */
+function systemDark(site: string, name: string): string | undefined {
+  const css = [...tree(site)].filter(([file]) => file.endsWith('.css')).map(([, text]) => text).join('\n');
+  const block = /@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root:not\(\[data-theme=("?)light\1\]\)\s*\{([^}]*)\}/.exec(css)?.[2];
+  return block === undefined ? undefined : new RegExp(`${name}:\\s*([^;}]+)`).exec(block)?.[1]?.trim().toLowerCase();
+}
 
 test('Accent override', () => {
-  expect(accents(main.full)).toEqual({ light: '#e4002b', dark: '#9da8ff' });
-  expect(accents(main.staff)).toEqual({ light: '#e4002b', dark: '#9da8ff' });
+  expect(accents(main.full)).toEqual({ light: '#e4002b', dark: DEFAULT_ACCENTS.dark });
+  expect(accents(main.staff)).toEqual({ light: '#e4002b', dark: DEFAULT_ACCENTS.dark });
+});
+
+// catalogue-site "Override keeps the dark accent".
+test('Override keeps the dark accent', () => {
+  for (const site of [main.full, main.staff]) {
+    expect(resolved(site, '--color-accent', 'light')).toBe('#e4002b');
+    expect(resolved(site, '--color-accent', 'dark')).toBe('#7d8cff');
+  }
 });
 
 test('Broken settings', () => {
   for (const site of [broken.full, broken.staff]) {
-    expect(accents(site)).toEqual({ light: '#000f9f', dark: '#9da8ff' });
+    expect(accents(site)).toEqual(DEFAULT_ACCENTS);
     expect(read(site, 'map/index.html')).toContain('<title>Map | stackledger</title>');
     expect(read(site, 'map/index.html')).not.toContain('Northwind software');
   }
@@ -195,8 +217,8 @@ test('Broken settings', () => {
 // catalogue-site "Site tokens from the design system".
 test('Palette from the design system', () => {
   for (const site of [example.full, example.staff]) {
-    expect(themeVar(site, '--ds-site-light-body').light).toMatch(/^#fff(?:fff)?$/);
-    expect(themeVar(site, '--ds-site-dark-body').light).toBe('#1c1c1c');
+    expect(themeVar(site, '--ds-site-light-body').light).toBe('#f6f3ec');
+    expect(themeVar(site, '--ds-site-dark-body').light).toBe('#121110');
     expect(themeVar(site, '--color-body')).toEqual({ light: 'var(--ds-site-light-body)', dark: 'var(--ds-site-dark-body)' });
     expect(themeVar(site, '--font-primary').light).toBe('var(--ds-site-font-primary)');
     expect(themeVar(site, '--font-secondary').light).toBe('var(--ds-site-font-secondary)');
@@ -204,7 +226,11 @@ test('Palette from the design system', () => {
 });
 
 test("Accent stays stackledger's", () => {
-  for (const site of [example.full, example.staff]) expect(accents(site)).toEqual({ light: '#000f9f', dark: '#9da8ff' });
+  for (const site of [example.full, example.staff]) {
+    expect(accents(site)).toEqual(DEFAULT_ACCENTS);
+    expect(systemDark(site, '--color-accent')).toBe(DEFAULT_ACCENTS.dark);
+    expect([resolved(site, '--color-accent', 'light'), resolved(site, '--color-accent', 'dark')]).toEqual(['#3b5bdb', '#7d8cff']);
+  }
 });
 
 // catalogue-site "Brand mark": the header shows the mark before a custom title.
