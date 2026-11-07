@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Look and theme
-The default look SHALL follow brunosouzas.com: its colour tokens for light and dark, its type scale, and its fonts, shipped with the package and delivered by Astro's Fonts API with its local provider: Source Sans 3 for text and labels, Source Serif 4 for headings and the wordmark, Source Code Pro for code. `spec.site.colors` SHALL override the matching light-theme tokens only. When the `Settings` in use has an error, the site uses the default title and colours.
+The default look SHALL follow brunosouzas.com: its colour tokens for light and dark, its type scale, and its fonts, delivered as "Font delivery" says: Source Sans 3 for text, labels, the map and the diagrams, Source Serif 4 for headings and the wordmark, Source Code Pro for code. `spec.site.colors` SHALL override the matching light-theme tokens only. When the `Settings` in use has an error, the site uses the default title and colours.
 
 #### Scenario: Accent override
 - **WHEN** `spec.site.colors.accent` is `#E4002B`
@@ -11,10 +11,6 @@ The default look SHALL follow brunosouzas.com: its colour tokens for light and d
 - **WHEN** the `Settings` in use has an error in `spec.site.colors`
 - **THEN** the site uses the default title and colours
 
-#### Scenario: Source fonts shipped locally
-- **WHEN** a site is built
-- **THEN** its pages declare `@font-face` rules for `Source Sans 3` (400, 600, 700 and 900 normal), `Source Serif 4` (700 normal and italic) and `Source Code Pro` (400 normal) whose files are in the site's own folder, only Source Sans 3 400 normal and Source Serif 4 700 normal are preloaded, and no page requests a font from another origin
-
 #### Scenario: Lato shipped locally
 - **WHEN** a site is built and `package.json` is read
 - **THEN** Lato is no longer shipped: no file of the site names `Heebo`, `Signika` or `Lato`, and `package.json` has no `@fontsource/heebo`, `@fontsource/signika` or `@fontsource/lato` dependency
@@ -22,11 +18,6 @@ The default look SHALL follow brunosouzas.com: its colour tokens for light and d
 #### Scenario: Source font packages
 - **WHEN** a site is built and `package.json` is read
 - **THEN** `package.json` depends on `@fontsource/source-sans-3`, `@fontsource/source-serif-4` and `@fontsource/source-code-pro` at exactly `5.3.1`, and every font file of the site has the bytes of one of their latin `woff2` files
-
-#### Scenario: Missing font file
-- **GIVEN** one of the font files the fonts configuration names is missing from the installed packages
-- **WHEN** `stackledger build` runs
-- **THEN** the build fails with an error naming that file, and nothing is published
 
 ### Requirement: Site tokens from the design system
 The colour, font-size and heading variables of "Look and theme" SHALL read the `site` variables of `@brunosouzas/design-system` (`--ds-site-*`), which the build ships in the site's own stylesheet. The accent, which is also the focus colour, SHALL read `--ds-brand-<theme>-stackledger-accent`, and the colour on primary `--ds-site-<theme>-body`; neither stays a literal.
@@ -149,11 +140,11 @@ The home page's banner SHALL show, after its `h1` and text, the image `home-bann
 ## ADDED Requirements
 
 ### Requirement: Wordmark
-The header's site title SHALL be set in Source Serif 4, italic, weight 700, on every page of both sites and whatever `spec.site.title` holds, in the face the site ships ("Look and theme").
+The header's site title SHALL be set in Source Serif 4, italic, weight 700, on every page of both sites and whatever `spec.site.title` holds, in the face the site ships ("Font delivery").
 
 #### Scenario: Wordmark face
 - **WHEN** any page is opened in the light theme, then in the dark theme
-- **THEN** the site title's computed `font-family` starts with `Source Serif 4`, its `font-style` is `italic`, its `font-weight` is 700, and `document.fonts.check('italic 700 1em "Source Serif 4"')` is true
+- **THEN** the site title's computed `font-family` starts with `Source Serif 4-`, the family the Fonts API generates, its `font-style` is `italic`, its `font-weight` is 700, and `document.fonts` holds a loaded italic 700 face of that family
 
 #### Scenario: Wordmark with the longest title
 - **WHEN** `spec.site.title` holds 60 characters and a page is opened
@@ -181,3 +172,52 @@ The footer SHALL show, after the view name and stackledger version, the design s
 #### Scenario: No SVG of the sites holds a style
 - **WHEN** both sites are built from the example with a home link icon
 - **THEN** no `.svg` file of either site holds a `style` element
+
+### Requirement: Font delivery
+The build SHALL deliver the fonts with Astro's Fonts API and its local provider, naming the files copied into the working copy by root-relative paths (`./src/fonts/<file>`). It SHALL move every `<style>` the Fonts API writes into one file `_astro/fonts.css`, with each `url()` relative to it, and link that file once from each page where the first `<style>` was. Font CSS that differs between pages, or any other `<style>`, SHALL fail the build before publication.
+
+#### Scenario: Source fonts shipped locally
+- **WHEN** a site is built
+- **THEN** `_astro/fonts.css` declares `@font-face` rules for Source Sans 3 (400, 600, 700 and 900 normal), Source Serif 4 (700 normal and italic) and Source Code Pro (400 normal) whose files are in the site's own folder, only Source Sans 3 400 normal and Source Serif 4 700 normal are preloaded, and no page requests a font from another origin
+
+#### Scenario: Font CSS moved to a file
+- **WHEN** a site is built
+- **THEN** no page holds a `<style>` element, each page links `_astro/fonts.css` once with a relative URL (`../../_astro/fonts.css` from `software/editor/index.html`), and every `url()` of that file is `fonts/<file>.woff2` and resolves to a font file of the site
+
+#### Scenario: Other style still fails
+- **GIVEN** a page from Astro holding `<style>p{color:red}</style>`, a style with an `@import` or `@media` rule, a font style whose `:root` block also declares `color: red`, or a font `url()` outside `/_astro/fonts/`
+- **WHEN** the build moves the font CSS
+- **THEN** the build fails naming that page, and nothing is published
+
+#### Scenario: Font CSS differs between pages
+- **GIVEN** two pages from Astro whose font CSS differs by one character
+- **WHEN** the build moves the font CSS
+- **THEN** the build fails naming the second page, and nothing is published
+
+#### Scenario: Fonts from another staging folder
+- **WHEN** the same catalogue is built twice with the same `--date` into two output folders at different paths, so from two staging folders
+- **THEN** the generated family names, `_astro/fonts.css`, the font files and every page are byte-identical in both builds
+
+#### Scenario: Fonts load under the policy
+- **WHEN** the home, map and a component page are opened in a headless browser
+- **THEN** no CSP violation is reported and the faces of Source Sans 3 400, 600, 700 and 900 and Source Serif 4 700 are loaded
+
+#### Scenario: Missing font file
+- **GIVEN** one of the font files the fonts configuration names is missing from the installed packages
+- **WHEN** `stackledger build` runs
+- **THEN** the build fails with an error naming that file, and nothing is published
+
+### Requirement: Font variables
+`tokens.css` SHALL read the families from the Fonts API's variables, `--font-primary` (Source Sans 3), `--font-secondary` (Source Serif 4) and `--font-mono` (Source Code Pro), in place of `--ds-site-font-*`. Because the Fonts API renames the families (for example `Source Sans 3-4235479e6dd7653f`), a site CSS rule SHALL set `font-family: var(--font-primary)` on every inline `svg` that has a `font-family` attribute (map, diagrams). Standalone SVG files keep the plain names.
+
+#### Scenario: Map drawn in the shipped face
+- **WHEN** the map page and a component page with a neighbourhood diagram are opened, in either theme
+- **THEN** the computed `font-family` of the map's `svg` and of the neighbourhood diagram's `svg` starts with `Source Sans 3-`, and a station label's computed family is the same
+
+#### Scenario: Body and code faces
+- **WHEN** any page is opened
+- **THEN** the body's computed `font-family` starts with `Source Sans 3-`, an `h1`'s with `Source Serif 4-`, and the computed value of `--font-mono` starts with `Source Code Pro-`
+
+#### Scenario: Standalone map keeps the plain name
+- **WHEN** `stackledger map` writes an SVG to stdout
+- **THEN** its root `font-family` names `'Source Sans 3'` with no generated suffix, as metro-map "Themes" says

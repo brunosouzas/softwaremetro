@@ -1,25 +1,31 @@
 # Design: identity v2
 
-## 1. Font delivery (decided by the owner, Q2b)
+## 1. Font delivery (decided by the owner, Q2, Q2b, Q2c: "the same rule as brunosouzas.com")
 
-| Option | Network at build | Inline code | Verdict |
+| Option | Network at build | What reaches the page | Verdict |
 |---|---|---|---|
 | A. Astro Fonts API, Google provider (as brunosouzas.com) | yes | inline `<style>` | no: the build makes no network calls (`build-command`, Writes) |
-| B. Astro Fonts API, **local provider** reading the `@fontsource` files in the package | no | inline `<style>` with `@font-face` | **chosen**: the same mechanism as the site (fallback metrics, preload), one maintenance path |
-| C. `@fontsource` files in a hand-written `fonts.css` (today's mechanism) | no | none | rejected by the owner: two ways of loading the same fonts |
+| B. Astro Fonts API, **local provider**, its CSS served as a file of the site | no | a stylesheet file, preload links | **chosen**: the site's mechanism (Astro generates the faces, the fallback metrics and the preloads), within stackledger's security rules |
+| B'. The same, with the inline `<style>` allowed by hash in the policy | no | inline `<style>` | rejected after review: renamed families, hashes per page depth, a policy shared between the two sites, and a proxy recipe that must drop its policy (AB#303 spec review r1) |
+| C. `@fontsource` files in a hand-written `fonts.css` | no | a stylesheet file | rejected by the owner (Q2c): another way of loading the fonts than the site's |
 
-Families, from `site.font.*` and `font.sans` of the package: Source Sans 3 400, 600, 700, 900 normal (text, labels, map, diagrams; 900 for map labels that use `font.weightHeavy`); Source Serif 4 700 normal and italic (headings, wordmark); Source Code Pro 400 normal (code). `preload` for Sans 400 normal and Serif 700 normal only. The fonts config lives in the build's Astro config (`astroConfig` in `src/site/build.ts`), and the `<Font>` components in `Base.astro`. The `--font-*` variables the Fonts API defines replace `--ds-site-font-*` in `tokens.css`; the variables keep the family names of `site.font.*` first.
+Families, from `site.font.*` and `font.sans` of the package: Source Sans 3 400, 600, 700, 900 normal (text, labels, map, diagrams; 900 for map labels that use `font.weightHeavy`); Source Serif 4 700 normal and italic (headings, wordmark); Source Code Pro 400 normal (code). `preload` for Sans 400 normal and Serif 700 normal only. The fonts config lives in the build's Astro config (`astroConfig` in `src/site/build.ts`), one family per CSS variable: `--font-primary` (Sans), `--font-secondary` (Serif) and `--font-mono` (Code Pro), the names the site's CSS already reads; the `<Font>` components go in `Base.astro`. The colour variables stay in `tokens.css`; the three font variables now come from the font CSS (§2), so the main spec's "one stylesheet of variables" becomes "colours from `tokens.css`, fonts from the Fonts API". The files come from `@fontsource/source-sans-3`, `@fontsource/source-serif-4` and `@fontsource/source-code-pro` (exact 5.3.1, OFL 1.1; the design system ships only the TTFs it embeds in SVGs). The build copies them into the working copy's `src/fonts/`, as today, and the local provider names them by paths relative to the project root (`./src/fonts/<file>`).
 
-## 2. The policy with hashes (decided by the owner, Q2b)
+**Determinism.** Astro names each family `<name>-<hash>` (for example `Source Sans 3-4235479e6dd7653f`), the hash computed from the family's config. With root-relative paths the name, the CSS and the pages are byte-identical across two builds from different staging folders (probe: two builds, identical `index.html`); with absolute paths the name would change with the install path.
 
-The probe (AB#303 scratch `probe-fonts`) showed what the Fonts API writes: two `<style>` elements per page (one per family with `@font-face` rules and the generated fallback face), identical on every page, whose `url()` values are root-absolute (`/_astro/fonts/<hash>.woff2`). Two consequences:
+## 2. The font CSS as a file (no change to the security rules)
 
-- **Relative URLs.** A root-absolute `url()` breaks a site served under a path prefix (`/full/`) and is refused by "Relative URLs". The build already rewrites attributes to relative per page depth (`src/site/relative.ts`); it rewrites these `url()` values the same way. The style text then differs per page depth, so there is one hash per depth and per style.
-- **One policy for all pages.** The build computes, after the rewrite, the `sha256` (base64) of every inline `<style>` of both sites, and writes one policy: today's directives with `style-src 'self'` followed by the sorted unique hashes. Every page's CSP `meta` and `_headers` carry exactly that policy. Astro's own `security.csp` stays off: stackledger owns the policy (`src/site/policy.ts`), as today.
+The Fonts API writes its CSS in inline `<style>` elements: per family, the `@font-face` rules of the faces and of the generated fallback, and a `:root` rule setting `--font-*` to the renamed family plus its fallbacks. These are identical on every page, with root-absolute `url("/_astro/fonts/<hash>.woff2")` values.
 
-The scan that today refuses any `<style>` keeps refusing a style that is not a block of `@font-face` rules (only `@font-face { … }` blocks, with `font-family`, `src` with relative `url()` and `format()`, `font-style`, `font-weight`, `font-display`, `unicode-range`, and the fallback's `size-adjust`, `ascent-override`, `descent-override`, `line-gap-override` and `local()`); inline scripts, `style` attributes and event handlers stay refused.
+After the Astro build and before the existing scan, the build (`src/site/relative.ts`, which already rewrites every page) moves them out:
 
-The proxy recipes (`examples/hosting/Caddyfile` and the hosting docs) set only `Content-Security-Policy: frame-ancestors 'none'` with the other headers: two CSPs apply together, so a fixed copy of the policy in the proxy would block the hashed styles. The `meta` policy on each page and the generated `_headers` (Cloudflare Pages, Netlify) carry the full policy.
+1. It takes the contents of every `<style>` element of the page, in order. Each must be one the Fonts API wrote: only `@font-face` blocks and `:root` blocks whose declarations are all `--font-*` custom properties, with `url()` values of the form `/_astro/fonts/<file>.woff2`. Anything else fails the build, as an inline style does today.
+2. It writes their text, with each `url()` made relative to the stylesheet (`fonts/<file>.woff2`), into one file `_astro/fonts.css` of the site. All pages must yield the same text; a page that yields a different one fails the build.
+3. It replaces the elements with one `<link rel="stylesheet" href="<relative>/_astro/fonts.css">` where the first one was.
+
+The policy, `_headers`, the proxy recipes and the "No inline code" rule stay as they are: the pages carry no inline style. The preload links Astro writes are rewritten to relative URLs as today.
+
+**Inline SVGs.** The map and the diagrams are inline SVGs that name `'Source Sans 3'` in their `font-family` attribute, the package's `font.sans`, which no longer matches the renamed face. A site rule sets `font-family: var(--font-primary)` on those SVGs. A CSS rule overrides a presentation attribute, so the page's text and the drawings use the same shipped face. A standalone SVG (`stackledger map` to stdout, the README images) keeps the plain names.
 
 ## 3. Colours
 
@@ -27,7 +33,7 @@ The proxy recipes (`examples/hosting/Caddyfile` and the hosting docs) set only `
 
 ## 4. Banner
 
-`scripts/home-banner.json` becomes concept C as approved (the generator in `openspec/changes/identity-v2/approved/`), with the pipe fills `illustration.accent`, `brand.light.stackledgerAccent` and `color.ink`, the `ledgerMark` Folha at size 180, and Sinal at the end of the blue line. `site-art.mjs` builds it with the 0.8.1 package. Matching the approved preview is checked once, by the parent, through `<img>` in Chrome (§6.5).
+`scripts/home-banner.json` becomes concept C as approved (the generator in `openspec/changes/identity-v2/approved/`), with the pipe fills `illustration.accent`, `brand.light.stackledgerAccent` and `color.ink`, the `ledgerMark` Folha at size 180, and Sinal at the end of the blue line. `site-art.mjs` builds it with the 0.8.1 package. Matching the approved preview was checked with the 0.8.1 branch build (pixel-identical through `<img>` in Chrome) and is checked once more on the release (§6.5).
 
 ## 5. Footer endorsement
 
@@ -37,11 +43,9 @@ The proxy recipes (`examples/hosting/Caddyfile` and the hosting docs) set only `
 
 The owner can veto any of these at G1.
 
-1. **Font files.** The design system ships only the TTF files it embeds in SVGs (no Source Serif 4, no Sans 600). stackledger depends on `@fontsource/source-sans-3`, `@fontsource/source-serif-4` and `@fontsource/source-code-pro` (exact 5.3.1, OFL 1.1) instead of `@fontsource/heebo`, `lato` and `signika`; the local provider reads their latin `woff2` files from `node_modules` at build.
-2. **The scanned style.** Astro 7.3.8's `<Font>` writes, in the same inline `<style>`, a `:root { --font-…: … }` rule beside the `@font-face` blocks. The scan accepts a style made only of `@font-face` blocks (the descriptors listed in §2) and at most one `:root` block whose declarations are all custom properties named `--font-*` (a style with no `:root` block passes).
+1. **Font files.** See §1: the three `@fontsource` packages at 5.3.1 replace `heebo`, `lato` and `signika`; copied into the working copy and named by root-relative paths.
+2. **The moved style.** See §2: only the Fonts API's `@font-face` and `:root { --font-* }` blocks can be moved; anything else in a `<style>` still fails the build.
 3. **stackledger's own sticker code** (`src/map/ink.ts`, the legend panel): a shadow copy is drawn only when `map.shadow` > 0 (0 in the package, so none); on the dark surface the legend panel and stackledger's own outlines on the background take `surface.dark.muted` (ADR 0009 of the design system: ink vanishes on near-black). A line's casing stays ink: the design system's `pipe` draws it and takes no `surface`; the coloured line carries the reading on dark, as the AB#303 renders showed.
 4. **Labels may move.** Without the shadow the ink around markers is smaller, so a label can take an earlier candidate position. The engine's logic does not change; recorded outputs (the 0.2.0 map fixtures, `docs/images/map-*.svg`) are re-recorded only after the owner has seen the before/after renders of the maps.
 5. **Banner evidence.** Pixel equality with the approved preview is a one-time render task (evidence in the PR), not a test: the approved files stay in this change folder, which moves when archived. The permanent test stays "the banner file is `coverTree` of the spec".
-6. **Endorsement mark.** The footer shows the symbol as two themed images, `symbol-light.svg` and `symbol-dark.svg` (the design system's `symbol` piece on each surface, written by `site-art.mjs`), with the header mark's light/dark pattern; no SVG of the site carries a `<style>`, so `_headers` never meets an image with inline style.
-7. **Personal mode.** The policy holds the hashes of the inline styles of the sites the build writes (`full` only in the personal mode).
-8. **site-security's Purpose** still says "a fixed Content Security Policy"; a delta cannot change a Purpose, so the archive task edits that line by hand.
+6. **Endorsement mark.** Two themed images, `symbol-light.svg` and `symbol-dark.svg`, with the header mark's light/dark pattern; no SVG of the site carries a `<style>`.
