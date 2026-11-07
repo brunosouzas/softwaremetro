@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { component, layout, licence, line, set, settings } from '../unit/helpers.js';
 import { yaml } from './mcp-helpers.js';
-import { cli, root } from './helpers.js';
+import { cli, NET_TRAP_MARKER, netFlags, root } from './helpers.js';
 import { MARKER, MARKER_NAME } from '../../src/site/policy.js';
 import { manualRestore } from '../manual-restore.js';
 import { largeCatalogue } from '../large-catalogue.js';
@@ -614,11 +614,13 @@ test.concurrent('Sandboxed build', async context => {
   mkdirSync(out);
   const before = snapshot(folder);
   const flags = ['--permission', `--allow-fs-read=${folder}`, `--allow-fs-read=${root}`, `--allow-fs-read=${out}`, `--allow-fs-write=${out}`,
-    '--allow-addons', '--allow-child-process', '--allow-worker'];
+    '--allow-addons', '--allow-child-process', '--allow-worker', ...netFlags()];
   const fakeHome = fresh('home');
   const result = await build(['build', folder, '--out', out, '--date', DATE], { flags, env: { HOME: fakeHome, TMPDIR: fakeHome } });
   expect(result.status, result.stderr).toBe(0);
   expect(result.stderr).not.toContain('ERR_ACCESS_DENIED');
+  // No connection to a host other than loopback was attempted (test/helpers/net-trap.mjs).
+  expect(result.stderr).not.toContain(NET_TRAP_MARKER);
   expect(existsSync(fakeHome)).toBe(false);
   expect(snapshot(folder)).toEqual(before);
   // The same files as the unrestricted build of the same catalogue and date.

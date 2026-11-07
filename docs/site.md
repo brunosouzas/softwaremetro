@@ -24,7 +24,7 @@ The output folder is refused (exit 2) when, after resolving symbolic links, it i
 
 stderr holds the report, in this order: the catalogue's error and warning counts with a hint to run `stackledger validate` (only when there is at least one), the map's suggested positions, unrouted hops and unused layout as [`stackledger map`](map.md) writes them for the `full` view, the skill set's lines (see [Skills](#skills)), one line per site built with its folder and page count, and a reminder that the folders must be served behind an identity-aware proxy.
 
-**What it writes.** Only inside `--out`. Astro runs from a copy of the site project in a staging folder `--out/.stackledger-tmp-*`, with every cache there too; nothing is written to the catalogue, the installed package, the system temporary folder or your home folder, and there are no network calls and no telemetry. You can check it with the Node.js permission model (Node 22.13 or later):
+**What it writes.** Only inside `--out`. Astro runs from a copy of the site project in a staging folder `--out/.stackledger-tmp-*`, with every cache there too; nothing is written to the catalogue, the installed package, the system temporary folder or your home folder, and there are no network calls and no telemetry (Astro's Fonts API only listens on a loopback port while it builds). You can check it with the Node.js permission model (Node 22.13 or later):
 
 ```sh
 node --permission --allow-fs-read=/path/to/catalogue --allow-fs-read=/path/to/stackledger \
@@ -34,6 +34,8 @@ node --permission --allow-fs-read=/path/to/catalogue --allow-fs-read=/path/to/st
 ```
 
 Create `/path/to/out` first and give real paths (without symbolic links): the build reads back what it writes in the staging folder, and the permission model checks paths as written.
+
+On a Node version that has `--allow-net` (26, not 22 or 24), the permission model also restricts the network, so add `--allow-net` for that port. It allows every connection, so it no longer checks the network claim; stackledger's own tests add a trap that refuses any host other than loopback (`test/helpers/net-trap.mjs`).
 
 **Atomic replace.** Both sites are fully built in the staging folder before anything published changes. Then each entry (`staff`, `full`, `_headers`, `robots.txt`, `_redirects`, `.stackledger-build`) is swapped by renames: the previous entry moves into the staging folder's `old/`, created just before the first rename, and the new one moves into place. A personal build has no new `staff`: it writes an empty `full-only` file in the staging folder, and an earlier `staff` only moves into `old/`. The rename of the marker is the commit point. A failure before it undoes every rename, so the previous build stays as it was. After the commit the replaced entries and the staging folder are removed; a failure there is only a warning.
 
