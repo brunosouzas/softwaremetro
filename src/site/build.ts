@@ -16,7 +16,8 @@
  * How Astro runs (proven by docs/spikes/2026-10-20-astro-build/): from a writable copy of the shipped
  * `site/` folder with the current directory set to it, `outDir` inside it, every dependency bundled
  * into the render step, packages resolved from this package through a Vite plugin, caches in staging
- * and telemetry off. process.chdir makes this one build at a time per process.
+ * and telemetry off, and a server that names no host (the Fonts API's) bound to 127.0.0.1 while
+ * Astro builds (loopback.ts). process.chdir makes this one build at a time per process.
  *
  * Fonts: Astro's Fonts API (local provider, files copied from the @fontsource packages) writes its CSS
  * in inline <style> elements; moveFontCss (relative.ts) moves exactly that CSS into `_astro/fonts.css`
@@ -39,6 +40,7 @@ import { ownerNames } from './owners.js';
 import { HEADERS, MARKER, MARKER_NAME, POLICY, redirects, ROBOTS } from './policy.js';
 import { FULL_ONLY } from './staging.js';
 import { listFiles, moveFontCss, relativise, scan } from './relative.js';
+import { withLoopbackServers } from './loopback.js';
 import { buildSkillsData } from './skills-data.js';
 import { skillsReport } from './skills-build.js';
 import type { SkillSet } from '../skills/source.js';
@@ -224,7 +226,8 @@ async function buildView(staging: string, view: ViewName, data: SiteData, hooks:
   const previous = process.cwd();
   process.chdir(work);
   try {
-    await build(config as unknown as Parameters<typeof build>[0]);
+    // The Fonts API's prerender server names no host: bind it to 127.0.0.1, not every interface.
+    await withLoopbackServers(() => build(config as unknown as Parameters<typeof build>[0]));
   } finally {
     process.chdir(previous);
   }
