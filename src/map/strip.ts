@@ -30,7 +30,7 @@ const LINE_Y = 56;
 const MIN_SPACING = 150;
 const LABEL_WIDTH = 170;
 const BADGE_HEIGHT = 20;
-// Wide enough that a badge's shadow and rim do not touch the next badge.
+// Wide enough that a badge's shadow and rim, when the theme draws them (src/map/ink.ts), do not touch the next badge.
 const BADGE_GAP = 11;
 const STOP_HIT_MIN_WIDTH = 32;
 
@@ -60,7 +60,7 @@ function fit(title: string): string {
   return chars.join('') + '…';
 }
 
-/** A badge as an ink-style sticker; `flat` leaves out the shadow and rim and keeps the outline inside the box. */
+/** A badge as an ink-style sticker; `flat` leaves out any shadow and rim and keeps the outline inside the box. */
 function badgeShape(item: { badge: string; color: string }, x: number, y: number, theme: Theme, flat = false): string {
   const width = badgeWidth(item.badge);
   return writePiece(lineBadge({ x: x + width / 2, y: y + BADGE_HEIGHT / 2, text: item.badge, fill: item.color, width, height: BADGE_HEIGHT, flat, surface: theme.surface }));
@@ -110,7 +110,7 @@ export function renderStrip(input: Strip, theme: Theme): string {
   const hasInterchanges = input.stops.some(stop => stop.interchanges.length > 0);
   const width = last + spacing / 2 + PADDING;
   const height = LINE_Y + (hasInterchanges ? 92 : 60);
-  // High enough that the badge's shadow clears the rim of an interchange at the end of the line.
+  // High enough that the badge's shadow, when drawn, clears the rim of an interchange at the end of the line.
   const terminal = (x: number) => badgeShape(input, x - badgeWidth(input.badge) / 2, LINE_Y - 48, theme);
   const body = [
     tag('rect', { x: 0, y: 0, width, height, fill: theme.background }),

@@ -225,6 +225,11 @@ test('Other style still fails', () => {
     '@font-face{font-family:"X";src:url("/_astro/fonts/a.woff2");font-display:var(--x);}',
     '@font-face{font-family:"X";src:url("/_astro/fonts/\\61.woff2");}',
     '/* x */:root{--font-primary:serif;}',
+    // An escaped quote: a browser reads color:red on :root; the splitters, which skip strings without
+    // reading escapes, would see two font variables. Only the backslash refusal stops it.
+    ':root{--font-x:"a\\"b";color:red;--font-y:"c\\"d"}',
+    // Only format() may follow url().
+    '@font-face{font-family:"X";src:url("/_astro/fonts/a.woff2") format("woff2") tech(variations);}',
   ];
   for (const css of hostile) {
     expect('problem' in fontCss(css), css).toBe(true);
@@ -247,4 +252,8 @@ test('Font CSS differs between pages', () => {
   const site = folder({ 'index.html': page('', fontHead()), 'map/index.html': page('', fontHead([changed, SERIF])), 'software/index.html': page('', csp) });
   expect(moveFontCss(site)).toEqual(['map/index.html: font CSS differs from index.html\'s', 'software/index.html: no font CSS']);
   expect(() => readFileSync(join(site, '_astro/fonts.css'))).toThrow();
+  // When the first page is refused, the message names the page that set the reference CSS.
+  const refused = folder({ 'index.html': page('', csp), 'map/index.html': page('', fontHead()), 'software/index.html': page('', fontHead([changed, SERIF])) });
+  expect(moveFontCss(refused)).toEqual(['index.html: no font CSS', 'software/index.html: font CSS differs from map/index.html\'s']);
+  expect(() => readFileSync(join(refused, '_astro/fonts.css'))).toThrow();
 });

@@ -8,7 +8,8 @@
  * Layout: each column is as wide as its longest title (within bounds), the columns sit at the left
  * edge, the middle and the right edge of a 1200-unit drawing that the page scales to its width, and
  * the item, short columns and the "Nothing" placeholders are centred vertically. Linked boxes are
- * ink-style stickers (outline and hard shadow, src/map/ink.ts); the centre item uses the accent fill.
+ * ink-style stickers (outline, and a hard shadow only while map.shadow is above 0, src/map/ink.ts); the
+ * centre item uses the accent fill.
  *
  * Safety: every element goes through tag() and every catalogue text through escapeXml (src/map/xml.ts);
  * only boxes with a page carry data-ref, which the page script turns into a link. A text list on the
@@ -38,7 +39,7 @@ const MIN_BOX_WIDTH = 160;
 const MAX_BOX_WIDTH = 300;
 const BOLD_FACTOR = 1.1;
 const BOX_RADIUS = 10;
-/** The diagram is drawn at about twice the map's scale, so its outline and shadow are larger. */
+/** The diagram is drawn at about twice the map's scale, so its outline (and any shadow) is larger. */
 const INK_SCALE = 1.6;
 
 /** The diagram node of an item: components and licences have pages, other resources do not. */

@@ -218,7 +218,9 @@ function cssBlocks(css: string): { prelude: string; body: string; start: number 
  * `url()` made relative to FONT_CSS_FILE (`fonts/<file>.woff2`), or the reason it is refused. Only
  * `:root` blocks of `--font-*` custom properties and `@font-face` blocks of the descriptors the Fonts
  * API writes are accepted; `url()` only in `src`, and only to `/_astro/fonts/<file>.woff2`. A
- * backslash anywhere is refused, so a CSS escape cannot spell what the checks look for. */
+ * backslash anywhere is refused, so a CSS escape cannot spell what the checks look for. The refusal
+ * is also what makes the quote skipping below sound: the splitters do not read escapes, so an escaped
+ * quote would end a string early for them but not for a browser. */
 export function fontCss(css: string): { css: string } | { problem: string } {
   if (css.includes('\\')) return { problem: 'a CSS escape in a <style> element' };
   const blocks = cssBlocks(css);
@@ -281,20 +283,21 @@ export function movePageFonts(file: string, html: string): { html: string; css: 
 }
 
 /** Move the Fonts API's font CSS of every HTML page of a site into FONT_CSS_FILE (design §2). Every
- * page, in sorted path order, must yield the first page's font CSS. Returns the problems; with any,
+ * page, in sorted path order, must yield the font CSS of the first page that is not refused, which the
+ * message names. Returns the problems; with any,
  * nothing is written and the build fails before the scan (Other style still fails, Font CSS differs
  * between pages). */
 export function moveFontCss(siteDir: string): string[] {
   const pages = listFiles(siteDir).filter(file => file.endsWith('.html'));
   if (listFiles(siteDir).includes(FONT_CSS_FILE)) return [`${FONT_CSS_FILE} already exists`];
   const moved: [string, string][] = [];
-  let css: string | undefined;
+  let css: string | undefined, reference = '';
   const problems: string[] = [];
   for (const file of pages) {
     const page = movePageFonts(file, readFileSync(join(siteDir, file), 'utf8'));
     if ('problem' in page) { problems.push(page.problem); continue; }
-    css ??= page.css;
-    if (page.css !== css) { problems.push(`${file}: font CSS differs from ${pages[0]}'s`); continue; }
+    if (css === undefined) { css = page.css; reference = file; }
+    if (page.css !== css) { problems.push(`${file}: font CSS differs from ${reference}'s`); continue; }
     moved.push([file, page.html]);
   }
   if (problems.length || css === undefined) return problems.length ? problems : ['no page with font CSS'];

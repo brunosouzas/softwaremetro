@@ -272,6 +272,15 @@ const shownImages = (page: Page, selector: string) => page.locator(selector).eva
   .filter(image => getComputedStyle(image).display !== 'none')
   .map(image => [image.getAttribute('src')!.split('/').pop(), getComputedStyle(image).display]));
 
+// The frame of each theme: ink in light, the dark surface's muted colour in dark; no shadow, no rim.
+const FRAME = {
+  light: { width: '3px', style: 'solid', color: 'rgb(18, 18, 18)', shadow: 'none' },
+  dark: { width: '3px', style: 'solid', color: 'rgb(173, 167, 157)', shadow: 'none' },
+} as const;
+// The body colour of each theme (#F6F3EC, #121110) and stackledger's accent (#3B5BDB, #7D8CFF).
+const BODY = { light: 'rgb(246, 243, 236)', dark: 'rgb(18, 17, 16)' } as const;
+const ACCENT = { light: 'rgb(59, 91, 219)', dark: 'rgb(125, 140, 255)' } as const;
+
 for (const [how, set] of [
   ['system preference', async (page: Page, scheme: 'light' | 'dark') => { await page.emulateMedia({ colorScheme: scheme }); }],
   ['theme switch', async (page: Page, scheme: 'light' | 'dark') => {
@@ -315,43 +324,31 @@ for (const [how, set] of [
       expect(await shownImages(page, '.home-external img'), scheme).toEqual([[`github-${scheme}.svg`, 'inline']]);
     }
   });
-}
 
-// The frame of each theme: ink in light, the dark surface's muted colour in dark; no shadow, no rim.
-const FRAME = {
-  light: { width: '3px', style: 'solid', color: 'rgb(18, 18, 18)', shadow: 'none' },
-  dark: { width: '3px', style: 'solid', color: 'rgb(173, 167, 157)', shadow: 'none' },
-} as const;
-// The body colour of each theme (#F6F3EC, #121110) and stackledger's accent (#3B5BDB, #7D8CFF).
-const BODY = { light: 'rgb(246, 243, 236)', dark: 'rgb(18, 17, 16)' } as const;
-const ACCENT = { light: 'rgb(59, 91, 219)', dark: 'rgb(125, 140, 255)' } as const;
-
-test('Card frame in light', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/full/');
-  expect(await frameOf(page, '.card')).toEqual(FRAME.light);
-  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(BODY.light);
-});
-
-test('Card frame in dark', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/full/');
-  expect(await frameOf(page, '.card')).toEqual(FRAME.dark);
-  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(BODY.dark);
-});
-
-test('Pressed button keeps its frame', async ({ page }) => {
+  // The frame tests reach each theme both ways: the system preference and the reader's own choice
+  // (:root[data-theme]), which tokens.css styles in separate blocks.
   for (const scheme of ['light', 'dark'] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
-    await page.goto('/full/map/');
-    const chip = page.locator('.line-chips .btn').first();
-    await chip.hover();
-    expect(await frameOf(page, '.line-chips .btn'), `${scheme} hovered`).toEqual(FRAME[scheme]);
-    await chip.click();
-    await expect(chip).toHaveAttribute('aria-pressed', 'true');
-    expect(await frameOf(page, '.line-chips .btn[aria-pressed="true"]'), `${scheme} pressed`).toEqual(FRAME[scheme]);
+    test(`Card frame in ${scheme} (${how})`, async ({ page }) => {
+      await page.goto('/full/');
+      await set(page, scheme);
+      expect(await frameOf(page, '.card')).toEqual(FRAME[scheme]);
+      expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(BODY[scheme]);
+    });
   }
-});
+
+  test(`Pressed button keeps its frame (${how})`, async ({ page }) => {
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.goto('/full/map/');
+      await set(page, scheme);
+      const chip = page.locator('.line-chips .btn').first();
+      await chip.hover();
+      expect(await frameOf(page, '.line-chips .btn'), `${scheme} hovered`).toEqual(FRAME[scheme]);
+      await chip.click();
+      await expect(chip).toHaveAttribute('aria-pressed', 'true');
+      expect(await frameOf(page, '.line-chips .btn[aria-pressed="true"]'), `${scheme} pressed`).toEqual(FRAME[scheme]);
+    }
+  });
+}
 
 // catalogue-site "Site tokens from the design system": the text over primary is the body colour of its theme.
 test('Colour on primary', async ({ page }) => {
