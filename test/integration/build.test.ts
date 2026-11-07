@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { component, layout, licence, line, set, settings } from '../unit/helpers.js';
 import { yaml } from './mcp-helpers.js';
-import { cli, NET_TRAP_MARKER, netFlags, root } from './helpers.js';
+import { cli, netFlags, netTrap, root, trapBound, trapProblems } from './helpers.js';
 import { MARKER, MARKER_NAME } from '../../src/site/policy.js';
 import { manualRestore } from '../manual-restore.js';
 import { largeCatalogue } from '../large-catalogue.js';
@@ -619,12 +619,25 @@ test.concurrent('Sandboxed build', async context => {
   const result = await build(['build', folder, '--out', out, '--date', DATE], { flags, env: { HOME: fakeHome, TMPDIR: fakeHome } });
   expect(result.status, result.stderr).toBe(0);
   expect(result.stderr).not.toContain('ERR_ACCESS_DENIED');
-  // No connection to a host other than loopback was attempted (test/helpers/net-trap.mjs).
-  expect(result.stderr).not.toContain(NET_TRAP_MARKER);
+  // No connection to a host other than loopback was attempted, and no server listened elsewhere
+  // or stayed open (test/helpers/net-trap.mjs).
+  expect(trapProblems(result.stderr)).toEqual([]);
   expect(existsSync(fakeHome)).toBe(false);
   expect(snapshot(folder)).toEqual(before);
   // The same files as the unrestricted build of the same catalogue and date.
   expect(snapshot(out)).toEqual(snapshot(twoSites.out));
+}, 120_000);
+
+// Every server the build opens (Astro's Fonts API opens one per site) listens on 127.0.0.1 and is
+// closed by the end: the trap records each listen and reports one elsewhere or still open at exit.
+test.concurrent('Font server on loopback', async () => {
+  const out = fresh('loopback-out');
+  const result = await build(['build', join(root, 'examples', 'northwind'), '--out', out, '--date', DATE], { flags: netTrap() });
+  expect(result.status, result.stderr).toBe(0);
+  expect(trapProblems(result.stderr)).toEqual([]);
+  const bound = trapBound(result.stderr);
+  expect(bound.length).toBeGreaterThanOrEqual(readdirSync(out).filter(entry => entry === 'full' || entry === 'staff').length);
+  for (const address of bound) expect(address).toMatch(/^127\.0\.0\.1:\d+$/);
 }, 120_000);
 
 test.concurrent('One error', async () => {

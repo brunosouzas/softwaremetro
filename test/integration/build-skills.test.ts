@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { component, line, set, settings } from '../unit/helpers.js';
 import { yaml } from './mcp-helpers.js';
-import { cli, NET_TRAP_MARKER, netFlags, root } from './helpers.js';
+import { cli, netFlags, root, trapProblems } from './helpers.js';
 import { agent, playbook, rules, skill } from '../skills-helpers.js';
 
 const DATE = '2027-06-01';
@@ -326,7 +326,7 @@ test.concurrent('Sandboxed build', async context => {
   const home = fresh('home');
   const result = await build([catalogue, '--out', out, '--date', DATE, '--skills', kit], { flags, env: { HOME: home, TMPDIR: home } });
   expect(result.status, result.stderr).toBe(0);
-  expect(result.stderr).not.toContain(NET_TRAP_MARKER);
+  expect(trapProblems(result.stderr)).toEqual([]);
   expect(existsSync(home)).toBe(false); expect(snapshot(kit)).toEqual(before);
   expect(snapshot(out)).toEqual(snapshot(withSkills.out));
 }, 180_000);
