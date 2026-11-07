@@ -1,6 +1,6 @@
 /** metro-map: Map backdrop, Backdrop layer, Backdrop scale, Backdrop data, Backdrop data generation and
- * Backdrop credit, on the fictitious example catalogue. "Neutral" compares with the SVGs recorded from 0.5.1
- * (docs/images/map-*.svg and test/fixtures/map-0.5.1, task 1.1). Run npm run build && npm test. */
+ * Backdrop credit, on the fictitious example catalogue. "Neutral" compares with the SVGs re-recorded with design
+ * system 0.8.1 (docs/images/map-*.svg and test/fixtures/map-0.8.1, identity-v2 task 6.1). Run npm run build && npm test. */
 import { describe, expect, it } from 'vitest';
 import { DOMParser, type Element as XmlElement } from '@xmldom/xmldom';
 import { spawnSync } from 'node:child_process';
@@ -19,7 +19,7 @@ import { london } from '../../src/map/backdrops/london.js';
 import { tokens } from '@brunosouzas/design-system/tokens';
 
 const root = join(import.meta.dirname, '../..');
-const fixtures = join(root, 'test/fixtures/map-0.5.1');
+const fixtures = join(root, 'test/fixtures/map-0.8.1');
 const date = '2027-06-01';
 const catalogue = validateLoaded(await loadFolder(join(root, 'examples/northwind')));
 const views: ViewName[] = ['full', 'staff'];
