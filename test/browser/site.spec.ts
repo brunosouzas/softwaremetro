@@ -293,6 +293,21 @@ for (const [how, set] of [
     }
   });
 
+  // catalogue-site "Parent brand endorsement": one symbol per theme, inline before "by Bruno Souza".
+  test(`Symbol follows the theme (${how})`, async ({ page }) => {
+    for (const scheme of ['light', 'dark'] as const) {
+      await page.goto('/staff/software/');
+      await set(page, scheme);
+      expect(await shownImages(page, '.footer-bottom img'), scheme).toEqual([[`symbol-${scheme}.svg`, 'inline']]);
+      const after = await page.locator(`.footer-bottom img.themed-${scheme}`).evaluate(image => {
+        let text = '';
+        for (let node = image.nextSibling; node; node = node.nextSibling) text += node.textContent;
+        return text;
+      });
+      expect(after.trim(), scheme).toBe('by Bruno Souza');
+    }
+  });
+
   test(`Link icon follows the theme (${how})`, async ({ page }) => {
     for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/extra/');
@@ -636,4 +651,36 @@ test('Body and code faces', async ({ page }) => {
   const code = firstFamily(await computedFamily(page, 'main code'));
   expect(code).toMatch(/^Source Code Pro-/);
   expect(await loadedFaces(page)).toContain('Source Code Pro 400 normal');
+});
+
+// catalogue-site "Wordmark": the header's site title in the shipped Source Serif 4, italic, 700.
+async function wordmark(page: Page) {
+  const style = await page.locator('.header .navbar-brand').evaluate(element => {
+    const computed = getComputedStyle(element);
+    return { family: computed.fontFamily, style: computed.fontStyle, weight: computed.fontWeight, text: element.textContent };
+  });
+  return { ...style, family: firstFamily(style.family), loaded: await loadedFaces(page) };
+}
+
+test('Wordmark face', async ({ page }) => {
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    for (const path of ['/full/', '/staff/map/']) {
+      await page.goto(path);
+      const mark = await wordmark(page);
+      expect(mark.family, `${scheme} ${path}`).toMatch(/^Source Serif 4-[0-9a-f]{16}$/);
+      expect([mark.style, mark.weight], `${scheme} ${path}`).toEqual(['italic', '700']);
+      expect(mark.loaded, `${scheme} ${path}`).toContain('Source Serif 4 700 italic');
+    }
+  }
+});
+
+test('Wordmark with the longest title', async ({ page }) => {
+  await page.goto('/full/');
+  const standard = await wordmark(page);
+  await page.goto('/extra/');
+  const longest = await wordmark(page);
+  expect(longest.text).toHaveLength(60);
+  expect([longest.family, longest.style, longest.weight]).toEqual([standard.family, standard.style, standard.weight]);
+  expect(longest.loaded).toContain('Source Serif 4 700 italic');
 });

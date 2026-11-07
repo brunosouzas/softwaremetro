@@ -2,6 +2,8 @@
 
 Govern your software stack and licences, drawn as a metro map.
 
+<picture><source media="(prefers-color-scheme: dark)" srcset="docs/images/symbol-dark.svg"><img src="docs/images/symbol-light.svg" alt="" width="16" height="16"></picture> by Bruno Souza
+
 [![OpenSpec](https://github.com/brunosouzas/stackledger/actions/workflows/openspec.yml/badge.svg)](https://github.com/brunosouzas/stackledger/actions/workflows/openspec.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 

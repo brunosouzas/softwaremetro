@@ -158,6 +158,46 @@ test('View in the footer', () => {
   expect(read(main.full, 'index.html')).toMatch(/<footer[\s\S]*full view · stackledger/);
 });
 
+// catalogue-site "Parent brand endorsement".
+test('Footer endorsement', () => {
+  for (const [view, site] of [['full', main.full], ['staff', main.staff]] as const) {
+    for (const page of pages(site)) {
+      const footer = /<footer[\s\S]*<\/footer>/.exec(read(site, page))![0];
+      const depth = '(?:\\.\\.\\/)*';
+      expect(footer, page).toMatch(new RegExp(`${view} view · stackledger \\d+\\.\\d+\\.\\d+ · <span class="endorsement">`
+        + `<img class="symbol-mark themed-light" src="${depth}symbol-light\\.svg" alt="" width="16" height="16">`
+        + `<img class="symbol-mark themed-dark" src="${depth}symbol-dark\\.svg" alt="" width="16" height="16"> by Bruno Souza</span>`));
+      // No link holds the symbols or the words.
+      for (const anchor of footer.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)) expect(anchor[1], page).not.toMatch(/symbol-|Bruno Souza/);
+    }
+  }
+});
+
+test('No SVG of the sites holds a style', () => {
+  for (const site of [iconed.full, iconed.staff]) {
+    const svgs = [...tree(site)].filter(([file]) => file.endsWith('.svg'));
+    expect(svgs.map(([file]) => file)).toEqual(expect.arrayContaining(['symbol-light.svg', 'symbol-dark.svg', 'home-banner.svg', 'favicon.svg', 'link-icons/github-light.svg']));
+    for (const [file, content] of svgs) expect(content, file).not.toMatch(/<style\b/i);
+  }
+});
+
+// catalogue-site "Brand mark": the templates write img elements only for these files.
+test('No other images', () => {
+  const allowed = /^(?:\.\.\/)*(?:favicon\.svg|brand-mark-dark\.svg|symbol-light\.svg|symbol-dark\.svg|home-banner\.svg|link-icons\/[a-z]+-(?:light|dark)\.svg)$/;
+  for (const site of [iconed.full, iconed.staff]) {
+    let icons = 0;
+    for (const page of pages(site)) {
+      for (const tag of tagsOf(read(site, page)).filter(tag => tag.name === 'img')) {
+        const src = attrsOf(tag.attrs).find(attr => attr.name === 'src')!.value;
+        expect(src, page).toMatch(allowed);
+        if (src.includes('link-icons/')) { icons++; expect(page).toBe('index.html'); }
+        if (src.endsWith('home-banner.svg')) expect(page).toBe('index.html');
+      }
+    }
+    expect(icons).toBe(2);
+  }
+});
+
 /** A custom property of the light theme (top-level :root rules, last wins) and of the chosen dark theme. */
 function themeVar(site: string, name: string): { light: string | undefined; dark: string | undefined } {
   const css = [...tree(site)].filter(([file]) => file.endsWith('.css')).map(([, text]) => text).join('\n');
@@ -237,8 +277,8 @@ test('Header mark with a custom title', () => {
     for (const page of ['index.html', 'map/index.html', 'software/editor/index.html']) {
       const html = read(site, page);
       expect(html, page).toMatch(/<a class="navbar-brand" href="[^"]*"><img class="brand-mark themed-light" src="(?:\.\.\/)*favicon\.svg" alt="" width="28" height="28"><img class="brand-mark themed-dark" src="(?:\.\.\/)*brand-mark-dark\.svg" alt="" width="28" height="28">Northwind software<\/a>/);
-      // The two header marks; the home adds the banner (Home banner art).
-      expect([...html.matchAll(/<img\b/g)], page).toHaveLength(page === 'index.html' ? 3 : 2);
+      // The two header marks and the two footer symbols; the home adds the banner (Home banner art).
+      expect([...html.matchAll(/<img\b/g)], page).toHaveLength(page === 'index.html' ? 5 : 4);
     }
   }
 });
