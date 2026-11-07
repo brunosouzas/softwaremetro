@@ -144,7 +144,7 @@ The header's site title SHALL be set in Source Serif 4, italic, weight 700, on e
 
 #### Scenario: Wordmark face
 - **WHEN** any page is opened in the light theme, then in the dark theme
-- **THEN** the site title's computed `font-family` starts with `Source Serif 4-`, the family the Fonts API generates, its `font-style` is `italic`, its `font-weight` is 700, and `document.fonts` holds a loaded italic 700 face of that family
+- **THEN** the first family of the site title's computed `font-family`, unquoted, starts with `Source Serif 4-`, the family the Fonts API generates, its `font-style` is `italic`, its `font-weight` is 700, and `document.fonts` holds a loaded italic 700 face of that family
 
 #### Scenario: Wordmark with the longest title
 - **WHEN** `spec.site.title` holds 60 characters and a page is opened
@@ -174,7 +174,7 @@ The footer SHALL show, after the view name and stackledger version, the design s
 - **THEN** no `.svg` file of either site holds a `style` element
 
 ### Requirement: Font delivery
-The build SHALL deliver the fonts with Astro's Fonts API and its local provider, naming the files copied into the working copy by root-relative paths (`./src/fonts/<file>`). It SHALL move every `<style>` the Fonts API writes into one file `_astro/fonts.css`, with each `url()` relative to it, and link that file once from each page where the first `<style>` was. Font CSS that differs between pages, or any other `<style>`, SHALL fail the build before publication.
+The build SHALL deliver the fonts with Astro's Fonts API and its local provider, naming its files by root-relative paths (`./src/fonts/<file>`). It SHALL move the Fonts API's `<style>` elements ("Accepted font CSS") into one file `_astro/fonts.css`, each `url()` relative to it, linked once where the first was. Every HTML page, in sorted path order, SHALL yield the first one's font CSS; a page that differs or has none, or any other `<style>`, SHALL fail the build before publication.
 
 #### Scenario: Source fonts shipped locally
 - **WHEN** a site is built
@@ -182,25 +182,26 @@ The build SHALL deliver the fonts with Astro's Fonts API and its local provider,
 
 #### Scenario: Font CSS moved to a file
 - **WHEN** a site is built
-- **THEN** no page holds a `<style>` element, each page links `_astro/fonts.css` once with a relative URL (`../../_astro/fonts.css` from `software/editor/index.html`), and every `url()` of that file is `fonts/<file>.woff2` and resolves to a font file of the site
+- **THEN** no page holds a `<style>` element, each page links `_astro/fonts.css` once with a relative URL (`../../_astro/fonts.css` from `software/editor/index.html`), the page's CSP meta precedes that link and every font preload link, and every `url()` of that file is `fonts/<file>.woff2` and resolves to a font file of the site
+
+#### Scenario: Accepted font CSS
+- **GIVEN** pages from Astro whose `<style>` elements hold only `:root` blocks of `--font-*` custom properties and `@font-face` blocks whose descriptors are among `font-family`, `src` (`url(/_astro/fonts/<file>.woff2)`, `local("…")`, `format()`), `font-display`, `font-weight`, `font-style`, `size-adjust`, `ascent-override`, `descent-override`, `line-gap-override` and `unicode-range`, including a fallback face with `src:local("Arial")` whose quoted family name holds `:`, `;` and `}`
+- **WHEN** the build moves the font CSS
+- **THEN** it succeeds, the quoted text is kept whole, and `_astro/fonts.css` holds that CSS with only its `url()` values changed
 
 #### Scenario: Other style still fails
-- **GIVEN** a page from Astro holding `<style>p{color:red}</style>`, a style with an `@import` or `@media` rule, a font style whose `:root` block also declares `color: red`, or a font `url()` outside `/_astro/fonts/`
+- **GIVEN** a page from Astro holding `<style>p{color:red}</style>`, a style with an `@import` or `@media` rule, an `@font-face` with a descriptor outside "Accepted font CSS" (`font-feature-settings`), a font style whose `:root` block also declares `color: red`, or a font `url()` outside `/_astro/fonts/`
 - **WHEN** the build moves the font CSS
 - **THEN** the build fails naming that page, and nothing is published
 
 #### Scenario: Font CSS differs between pages
-- **GIVEN** two pages from Astro whose font CSS differs by one character
+- **GIVEN** pages from Astro where, in sorted path order, a later page's font CSS differs from the first page's by one character, or a page has no font CSS
 - **WHEN** the build moves the font CSS
-- **THEN** the build fails naming the second page, and nothing is published
-
-#### Scenario: Fonts from another staging folder
-- **WHEN** the same catalogue is built twice with the same `--date` into two output folders at different paths, so from two staging folders
-- **THEN** the generated family names, `_astro/fonts.css`, the font files and every page are byte-identical in both builds
+- **THEN** the build fails naming that page, and nothing is published
 
 #### Scenario: Fonts load under the policy
-- **WHEN** the home, map and a component page are opened in a headless browser
-- **THEN** no CSP violation is reported and the faces of Source Sans 3 400, 600, 700 and 900 and Source Serif 4 700 are loaded
+- **WHEN** the home, a component page and the map page are each opened in a headless browser and `document.fonts.ready` has resolved
+- **THEN** no page reports a CSP violation, and the faces loaded, counted across the three pages, include Source Sans 3 400, 600, 700 and 900 (900 on the map), Source Serif 4 700 normal and italic, and Source Code Pro 400
 
 #### Scenario: Missing font file
 - **GIVEN** one of the font files the fonts configuration names is missing from the installed packages
@@ -208,15 +209,15 @@ The build SHALL deliver the fonts with Astro's Fonts API and its local provider,
 - **THEN** the build fails with an error naming that file, and nothing is published
 
 ### Requirement: Font variables
-`tokens.css` SHALL read the families from the Fonts API's variables, `--font-primary` (Source Sans 3), `--font-secondary` (Source Serif 4) and `--font-mono` (Source Code Pro), in place of `--ds-site-font-*`. Because the Fonts API renames the families (for example `Source Sans 3-4235479e6dd7653f`), a site CSS rule SHALL set `font-family: var(--font-primary)` on every inline `svg` that has a `font-family` attribute (map, diagrams). Standalone SVG files keep the plain names.
+Site CSS SHALL take the families from the Fonts API's variables `--font-primary` (Source Sans 3), `--font-secondary` (Source Serif 4) and `--font-mono` (Source Code Pro, for `code`), defined only in `_astro/fonts.css`, not `--ds-site-font-*`. As the Fonts API renames the families (`Source Sans 3-<hash>`), a site CSS rule SHALL set `font-family: var(--font-primary)` on every inline `svg` with a `font-family` attribute (map, diagrams). Standalone SVG files keep the plain names.
 
 #### Scenario: Map drawn in the shipped face
 - **WHEN** the map page and a component page with a neighbourhood diagram are opened, in either theme
-- **THEN** the computed `font-family` of the map's `svg` and of the neighbourhood diagram's `svg` starts with `Source Sans 3-`, and a station label's computed family is the same
+- **THEN** the first family of the computed `font-family` of the map's `svg` and of the neighbourhood diagram's `svg`, unquoted, starts with `Source Sans 3-`, and a station label's computed family is the same
 
 #### Scenario: Body and code faces
-- **WHEN** any page is opened
-- **THEN** the body's computed `font-family` starts with `Source Sans 3-`, an `h1`'s with `Source Serif 4-`, and the computed value of `--font-mono` starts with `Source Code Pro-`
+- **WHEN** any page is opened, then a component page
+- **THEN** the first family of the computed `font-family`, unquoted, starts with `Source Sans 3-` for the body and `Source Serif 4-` for an `h1`, and on the component page with `Source Code Pro-` for a `code` element, and `document.fonts` holds a loaded Source Code Pro 400 face of that family
 
 #### Scenario: Standalone map keeps the plain name
 - **WHEN** `stackledger map` writes an SVG to stdout

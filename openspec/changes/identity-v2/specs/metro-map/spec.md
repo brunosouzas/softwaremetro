@@ -79,7 +79,7 @@ Stop and interchange markers, lines, terminal badges and rule counts SHALL be dr
 
 #### Scenario: Piece text has no font of its own
 - **WHEN** any map is drawn
-- **THEN** only the root `svg` element carries `font-family`, and no other attribute value holds an apostrophe
+- **THEN** only the root `svg` element carries `font-family`, and no attribute other than `font-family` and those carrying catalogue text (`data-zone`, escaped as `&apos;`) holds an apostrophe
 
 ### Requirement: Software map unchanged
 For the same catalogue, view, theme and map date, the software map SHALL place every station marker and line where stackledger 0.2.0 places them, unless the catalogue holds a file named `stackledger-skills.yaml`, no longer a catalogue file. A label or terminal badge SHALL leave 0.2.0's place only when 0.2.0 cut the label, a round bend moves it ("Arc obstacles") or the ink around markers changed ("Sticker shadow"). Only the painting may differ, and corners "Round bends" turns into arcs.
