@@ -4,7 +4,7 @@ Levels: unit and integration are vitest (`npm test`, after `npm run build`), e2e
 
 ## 1. Package
 
-- [ ] 1.1 Pin `@brunosouzas/design-system` to exactly `0.8.1` in `package.json` and `npm-shrinkwrap.json` (`npm install --save-exact`). Verified by: metro-map / Design system tokens / "Theme values are the tokens" (`test/unit/map-svg.test.ts`, unit) and package-release / Locked dependencies / "Two installs agree" (`test/integration/package-install.test.ts`, integration, needs the registry) once groups 2 to 6 build.
+- [x] 1.1 Pin `@brunosouzas/design-system` to exactly `0.8.1` in `package.json` and `npm-shrinkwrap.json` (`npm install --save-exact`). Verified by: metro-map / Design system tokens / "Theme values are the tokens" (`test/unit/map-svg.test.ts`, unit) and package-release / Locked dependencies / "Two installs agree" (`test/integration/package-install.test.ts`, integration, needs the registry) once groups 2 to 6 build.
 
 ## 2. Fonts through Astro's Fonts API (local provider)
 
@@ -50,7 +50,7 @@ Levels: unit and integration are vitest (`npm test`, after `npm run build`), e2e
 
 ## 7. Documentation
 
-- [ ] 7.1 README: fonts, colours, endorsement, map images and screenshots (6.1, 6.3), version notes. `docs/site.md` (fonts via the Fonts API and the moved `_astro/fonts.css`, the frame, the footer), `docs/map.md` (themes, the quoted font stack, no shadow), `docs/roadmap.md`, and the `AGENTS.md` "Implemented" line. Verified by `test/integration/docs.test.ts` and `test/unit/deployment-docs.test.ts` (unit and integration) and the review.
+- [x] 7.1 README: fonts, colours, endorsement, map images and screenshots (6.1, 6.3), version notes. `docs/site.md` (fonts via the Fonts API and the moved `_astro/fonts.css`, the frame, the footer), `docs/map.md` (themes, the quoted font stack, no shadow), `docs/roadmap.md`, and the `AGENTS.md` "Implemented" line. Verified by `test/integration/docs.test.ts` and `test/unit/deployment-docs.test.ts` (unit and integration) and the review.
 
 ## 8. Renders before and after (done by the parent session)
 
@@ -60,8 +60,8 @@ Levels: unit and integration are vitest (`npm test`, after `npm run build`), e2e
 ## 9. Full checks
 
 - [ ] 9.1 `npm run build && npm test`: every test green (group 6 included). Expected: exit code 0.
-- [ ] 9.2 `npm run test:browser`: every Playwright test green. Expected: exit code 0.
-- [ ] 9.3 `openspec validate identity-v2 --strict` reports the change valid, and every requirement of the deltas is under 500 characters (measured with a short script).
+- [x] 9.2 `npm run test:browser`: every Playwright test green. Expected: exit code 0.
+- [x] 9.3 `openspec validate identity-v2 --strict` reports the change valid, and every requirement of the deltas is under 500 characters (measured with a short script).
 - [ ] 9.4 Font bytes per page measured and written in the PR evidence (home and map page), as the proposal's Implicit requirements ask; no limit is enforced.
 
 ## 10. Archive
