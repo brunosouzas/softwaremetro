@@ -90,8 +90,16 @@ dt {
 }
 
 code {
+  font-family: var(--font-mono);
   font-size: 0.9em;
   overflow-wrap: anywhere;
+}
+
+/* The map and the diagrams name the design system's plain family ('Source Sans 3') in their
+   font-family attribute; the Fonts API renames the shipped face, so the page points them at it.
+   A CSS rule overrides a presentation attribute; standalone SVG files keep the plain names. */
+svg[font-family] {
+  font-family: var(--font-primary);
 }
 
 :focus-visible {

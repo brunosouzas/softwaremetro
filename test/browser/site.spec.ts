@@ -586,3 +586,54 @@ test.describe('Map backdrop', () => {
     }
   });
 });
+
+// catalogue-site "Font delivery" and "Font variables": the faces the Fonts API generates, loaded under the policy.
+/** The first family of a computed font-family, unquoted. */
+const firstFamily = (value: string) => value.split(',')[0]!.trim().replace(/^["']|["']$/g, '');
+/** The faces of the generated Source families the page has loaded, as `family-without-hash weight style`. */
+async function loadedFaces(page: Page): Promise<string[]> {
+  await page.waitForLoadState('networkidle');
+  await page.evaluate(() => document.fonts.ready);
+  const faces = await page.evaluate(() => [...document.fonts].filter(face => face.status === 'loaded').map(face => [face.family, face.weight, face.style]));
+  return faces.map(([family, weight, style]) => [family!.replace(/^["']|["']$/g, ''), weight, style] as const)
+    .filter(([family]) => /^Source (?:Sans 3|Serif 4|Code Pro)-[0-9a-f]{16}$/.test(family))
+    .map(([family, weight, style]) => `${family.replace(/-[0-9a-f]{16}$/, '')} ${weight} ${style}`);
+}
+const computedFamily = (page: Page, selector: string) => page.locator(selector).first().evaluate(element => getComputedStyle(element).fontFamily);
+
+test('Fonts load under the policy', async ({ page }) => {
+  const watched = await watch(page, '/full/');
+  const loaded = new Set<string>();
+  for (const path of ['/full/', '/full/software/slack/', '/full/map/']) {
+    await page.goto(path);
+    for (const face of await loadedFaces(page)) loaded.add(face);
+    expect(await violations(page), path).toEqual([]);
+  }
+  for (const face of ['Source Sans 3 400 normal', 'Source Sans 3 600 normal', 'Source Sans 3 700 normal', 'Source Sans 3 900 normal',
+    'Source Serif 4 700 normal', 'Source Serif 4 700 italic', 'Source Code Pro 400 normal']) expect([...loaded], face).toContain(face);
+  expect(watched.problems).toEqual([]);
+});
+
+test('Map drawn in the shipped face', async ({ page }) => {
+  for (const scheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/full/map/');
+    const map = await computedFamily(page, `.map-canvas.themed-${scheme} svg`);
+    expect(firstFamily(map), scheme).toMatch(/^Source Sans 3-/);
+    const label = await computedFamily(page, `.map-canvas.themed-${scheme} svg text[data-line]`);
+    expect(firstFamily(label), scheme).toBe(firstFamily(map));
+    await page.goto('/full/software/slack/');
+    const diagram = await computedFamily(page, `.diagram.themed-${scheme} svg`);
+    expect(firstFamily(diagram), scheme).toBe(firstFamily(map));
+  }
+});
+
+test('Body and code faces', async ({ page }) => {
+  await page.goto('/full/');
+  expect(firstFamily(await computedFamily(page, 'body'))).toMatch(/^Source Sans 3-/);
+  expect(firstFamily(await computedFamily(page, 'h1'))).toMatch(/^Source Serif 4-/);
+  await page.goto('/full/software/slack/');
+  const code = firstFamily(await computedFamily(page, 'main code'));
+  expect(code).toMatch(/^Source Code Pro-/);
+  expect(await loadedFaces(page)).toContain('Source Code Pro 400 normal');
+});
