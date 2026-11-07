@@ -46,7 +46,7 @@ Levels: unit and integration are vitest (`npm test`, after `npm run build`), e2e
 
 - [x] 6.1 Re-record the neutral maps with design system 0.8.1: `docs/images/map-light.svg`, `docs/images/map-dark.svg` and a 0.8.1 fixture set in place of `test/fixtures/map-0.5.1/` (its `record.mjs` adapted), then point `test/unit/map-backdrop.test.ts` at it. Proves metro-map / Map backdrop / "Neutral is today's map", "Neutral site map is today's map" (`test/unit/map-backdrop.test.ts`, unit).
 - [x] 6.2 Re-record the label positions of the 0.2.0 fixtures (`test/fixtures/map-0.2.0/`) with design system 0.8.1, keeping their station marker centres and line paths, which the test still checks against 0.2.0. Proves metro-map / Software map unchanged / "Example map" (`test/unit/map-svg.test.ts`, unit). If a station marker or a line path moved, stop and raise it in the PR; do not edit the fixtures. Done: the 0.8.1 re-record puts every station label, station marker centre and line path where the fixtures have them, so the fixtures are unchanged (the terminal badges and the legend, which the test does not read, differ from the 0.2.0 recording).
-- [ ] 6.3 Refresh the README screenshots (`docs/images/site-*.png`) from the fictitious Northwind catalogue dated 2027-06-01, as the README says.
+- [x] 6.3 Refresh the README screenshots (`docs/images/site-*.png`) from the fictitious Northwind catalogue dated 2027-06-01, as the README says.
 
 ## 7. Documentation
 
@@ -55,14 +55,14 @@ Levels: unit and integration are vitest (`npm test`, after `npm run build`), e2e
 ## 8. Renders before and after (done by the parent session)
 
 - [ ] 8.1 Before/after renders of the home, the map page (light and dark, labels included), a component page, the How it works diagram and the banner, shown to the owner; group 6 waits for the approval. Verified by the owner's approval recorded in the PR.
-- [ ] 8.2 One-time banner check: show the built `home-banner.svg` and the approved `openspec/changes/identity-v2/approved/home-banner-preview.svg` each through an `img` 1200 × 420 CSS pixels wide in Chrome, screenshot both and compare pixel for pixel (design §6.5). Verified by the two screenshots and the comparison result in the PR evidence; not a test, as the approved files move with the archive.
+- [x] 8.2 One-time banner check: show the built `home-banner.svg` and the approved `openspec/changes/identity-v2/approved/home-banner-preview.svg` each through an `img` 1200 × 420 CSS pixels wide in Chrome, screenshot both and compare pixel for pixel (design §6.5). Verified by the two screenshots and the comparison result in the PR evidence; not a test, as the approved files move with the archive. Done: both screenshots are pixel-identical (PNG sha1 `c55b4d647cbabfb9b185a2880fa1f2d1b3fd26f6`).
 
 ## 9. Full checks
 
-- [ ] 9.1 `npm run build && npm test`: every test green (group 6 included). Expected: exit code 0.
+- [x] 9.1 `npm run build && npm test`: every test green (group 6 included). Expected: exit code 0.
 - [x] 9.2 `npm run test:browser`: every Playwright test green. Expected: exit code 0.
 - [x] 9.3 `openspec validate identity-v2 --strict` reports the change valid, and every requirement of the deltas is under 500 characters (measured with a short script).
-- [ ] 9.4 Font bytes per page measured and written in the PR evidence (home and map page), as the proposal's Implicit requirements ask; no limit is enforced.
+- [x] 9.4 Font bytes per page measured and written in the PR evidence (home and map page), as the proposal's Implicit requirements ask; no limit is enforced. Done, in Chrome after `document.fonts.ready`: home 74,564 B (4 files), map page 104,972 B (6), component page 101,816 B (6).
 
 ## 10. Archive
 
