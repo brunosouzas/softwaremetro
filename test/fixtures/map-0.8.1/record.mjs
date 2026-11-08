@@ -1,8 +1,10 @@
-// Records the 0.5.1 engine's SVGs of the example catalogue at map date 2027-06-01 (metro-map "Map backdrop":
-// Neutral is today's map, Neutral site map is today's map). Run once, from the 0.5.1 code, after npm run build:
-// node test/fixtures/map-0.5.1/record.mjs .
+// Records the example catalogue's SVGs at map date 2027-06-01, drawn on design system 0.8.1 (metro-map "Map
+// backdrop": Neutral is today's map, Neutral site map is today's map; identity-v2 task 6.1). Run from the code that
+// pins @brunosouzas/design-system 0.8.1, after npm run build:
+// node test/fixtures/map-0.8.1/record.mjs .
 // <view>-<theme>.svg is what `stackledger map --view <view> --theme <theme>` prints; <view>-<theme>-site.svg is
-// the map the site embeds (no header and legend), taken from buildSiteData itself.
+// the map the site embeds (no header and legend), taken from buildSiteData itself. The site version string does
+// not reach the map; it is the one test/unit/map-backdrop.test.ts passes.
 import { writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 const root = resolve(process.argv[2]);
@@ -16,7 +18,7 @@ const { themes, inkOf } = await import(join(root, 'dist/map/themes.js'));
 const { buildSiteData } = await import(join(root, 'dist/site/data.js'));
 const date = '2027-06-01';
 const catalogue = validateLoaded(await loadFolder(join(root, 'examples/northwind')));
-const out = join(root, 'test/fixtures/map-0.5.1');
+const out = join(root, 'test/fixtures/map-0.8.1');
 for (const view of ['full', 'staff']) {
   const site = buildSiteData(catalogue, view, '0.5.1', date).data.map;
   for (const name of ['light', 'dark']) {

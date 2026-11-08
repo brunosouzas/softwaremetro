@@ -1,5 +1,7 @@
-/** The ink style's sticker: a shape with the theme's ink outline, after its hard shadow (a copy
- * moved by the theme offset, in the shadow colour) and, on dark themes, a light rim round it.
+/** The ink style's sticker: a shape with the theme's ink outline, after a hard shadow (a copy moved
+ * by the theme offset, in the shadow colour) only while `map.shadow` is above 0, and a rim round it
+ * only while the surface's `rimWidth` is above 0 (theme.shadow.enabled, theme.rim.enabled; neither
+ * with the design system's current tokens).
  * Shared by the map and the page diagrams; `scale` sizes outline, rim and offset to a drawing
  * (1 for the map). Pure: returns SVG text built with tag() by the given shape function.
  */

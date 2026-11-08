@@ -1,6 +1,6 @@
 /** metro-map: Map backdrop, Backdrop layer, Backdrop scale, Backdrop data, Backdrop data generation and
- * Backdrop credit, on the fictitious example catalogue. "Neutral" compares with the SVGs recorded from 0.5.1
- * (docs/images/map-*.svg and test/fixtures/map-0.5.1, task 1.1). Run npm run build && npm test. */
+ * Backdrop credit, on the fictitious example catalogue. "Neutral" compares with the SVGs re-recorded with design
+ * system 0.8.1 (docs/images/map-*.svg and test/fixtures/map-0.8.1, identity-v2 task 6.1). Run npm run build && npm test. */
 import { describe, expect, it } from 'vitest';
 import { DOMParser, type Element as XmlElement } from '@xmldom/xmldom';
 import { spawnSync } from 'node:child_process';
@@ -19,7 +19,7 @@ import { london } from '../../src/map/backdrops/london.js';
 import { tokens } from '@brunosouzas/design-system/tokens';
 
 const root = join(import.meta.dirname, '../..');
-const fixtures = join(root, 'test/fixtures/map-0.5.1');
+const fixtures = join(root, 'test/fixtures/map-0.8.1');
 const date = '2027-06-01';
 const catalogue = validateLoaded(await loadFolder(join(root, 'examples/northwind')));
 const views: ViewName[] = ['full', 'staff'];
@@ -107,6 +107,13 @@ describe('Backdrop layer', () => {
     expect([water!.getAttribute('fill'), water!.getAttribute('stroke'), park!.getAttribute('fill')])
       .toEqual([tokens.surface.light.backdropWater, tokens.surface.light.backdropWaterEdge, tokens.surface.light.backdropPark]);
   });
+  it('London colours on the v2 surfaces', () => {
+    const expected = { light: ['#C7DAEA', '#A9C4DA', '#D6E4CF'], dark: ['#1C2733', '#2A3846', '#1A241D'] };
+    for (const name of names) {
+      const [water, park] = children(layers(draw('full', name, 'london'))[1]!);
+      expect([water!.getAttribute('fill'), water!.getAttribute('stroke'), park!.getAttribute('fill')], name).toEqual(expected[name]);
+    }
+  });
   it('Holes without fill-rule', () => {
     for (const name of names) expect(draw('full', name, 'london')).not.toContain('fill-rule');
     for (const rings of [london.water, london.park]) {
@@ -192,6 +199,13 @@ describe('Backdrop credit', () => {
     for (const name of names) for (const chrome of [true, false]) {
       const text = children(layers(draw('full', name, 'london', chrome)).at(-1)!)[0]!;
       expect(text.getAttribute('fill'), `${name}`).toBe(tokens.surface[name].backdropCredit);
+    }
+  });
+  it('Credit colour on the v2 surfaces', () => {
+    const expected = { light: '#5C5852', dark: '#ADA79D' };
+    for (const name of names) {
+      const text = children(layers(draw('full', name, 'london')).at(-1)!)[0]!;
+      expect(text.getAttribute('fill'), name).toBe(expected[name]);
     }
   });
   it('Site credit flag', () => {

@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { component, layout, licence, line, set, settings } from '../unit/helpers.js';
 import { yaml } from './mcp-helpers.js';
-import { cli, root } from './helpers.js';
+import { cli, netFlags, netTrap, root, trapBound, trapProblems } from './helpers.js';
 import { MARKER, MARKER_NAME } from '../../src/site/policy.js';
 import { manualRestore } from '../manual-restore.js';
 import { largeCatalogue } from '../large-catalogue.js';
@@ -30,6 +30,9 @@ const faultEntry = join(root, 'test', 'integration', 'build-with-faults.mjs');
 interface Fault { op: 'mkdir' | 'rename' | 'rmdir' | 'rm'; nth: number }
 interface Plan {
   out: string;
+  /** build-with-faults.mjs build hooks: a font file the packages lack, a page Astro wrote changed. */
+  missingFont?: string;
+  pageEdit?: { site: 'full' | 'staff'; page: string; kind: 'style' | 'font-css' };
   fail?: Fault[];
   swap?: { to: string; kind: 'link' | 'folder'; after?: Fault; atCheck?: number };
   readOnlyStaging?: boolean;
@@ -611,15 +614,30 @@ test.concurrent('Sandboxed build', async context => {
   mkdirSync(out);
   const before = snapshot(folder);
   const flags = ['--permission', `--allow-fs-read=${folder}`, `--allow-fs-read=${root}`, `--allow-fs-read=${out}`, `--allow-fs-write=${out}`,
-    '--allow-addons', '--allow-child-process', '--allow-worker'];
+    '--allow-addons', '--allow-child-process', '--allow-worker', ...netFlags()];
   const fakeHome = fresh('home');
   const result = await build(['build', folder, '--out', out, '--date', DATE], { flags, env: { HOME: fakeHome, TMPDIR: fakeHome } });
   expect(result.status, result.stderr).toBe(0);
   expect(result.stderr).not.toContain('ERR_ACCESS_DENIED');
+  // No connection to a host other than loopback was attempted, and no server listened elsewhere
+  // or stayed open (test/helpers/net-trap.mjs).
+  expect(trapProblems(result.stderr)).toEqual([]);
   expect(existsSync(fakeHome)).toBe(false);
   expect(snapshot(folder)).toEqual(before);
   // The same files as the unrestricted build of the same catalogue and date.
   expect(snapshot(out)).toEqual(snapshot(twoSites.out));
+}, 120_000);
+
+// Every server the build opens (Astro's Fonts API opens one per site) listens on 127.0.0.1 and is
+// closed by the end: the trap records each listen and reports one elsewhere or still open at exit.
+test.concurrent('Font server on loopback', async () => {
+  const out = fresh('loopback-out');
+  const result = await build(['build', join(root, 'examples', 'northwind'), '--out', out, '--date', DATE], { flags: netTrap() });
+  expect(result.status, result.stderr).toBe(0);
+  expect(trapProblems(result.stderr)).toEqual([]);
+  const bound = trapBound(result.stderr);
+  expect(bound.length).toBeGreaterThanOrEqual(readdirSync(out).filter(entry => entry === 'full' || entry === 'staff').length);
+  for (const address of bound) expect(address).toMatch(/^127\.0\.0\.1:\d+$/);
 }, 120_000);
 
 test.concurrent('One error', async () => {
@@ -643,6 +661,25 @@ test.concurrent('One error', async () => {
     expect.stringMatching(PROXY),
   ]);
 }, 120_000);
+
+// catalogue-site "Missing font file", "Other style still fails" and "Font CSS differs between pages":
+// the build fails naming the file or the page, and nothing is published.
+describe('Font delivery faults', () => {
+  const faults: [string, Omit<Plan, 'out'>, RegExp][] = [
+    ['Missing font file', { missingFont: 'source-serif-4-latin-700-italic.woff2' }, /@fontsource\/source-serif-4\/files\/source-serif-4-latin-700-italic\.woff2 is missing/],
+    ['Other style still fails', { pageEdit: { site: 'full', page: 'map/index.html', kind: 'style' } }, /The full site has style the build does not allow: map\/index\.html: a <style> element with "p"/],
+    ['Font CSS differs between pages', { pageEdit: { site: 'staff', page: 'software/index.html', kind: 'font-css' } }, /The staff site has style the build does not allow: software\/index\.html: font CSS differs from index\.html's/],
+  ];
+  test.concurrent.each(faults)('%s', async (_, plan, message) => {
+    const out = fresh('font-fault');
+    const result = await build(['build', catalogue, '--out', out, '--date', DATE], { plan: { out, ...plan } });
+    expect(result.status, result.stderr).toBe(1);
+    expect(result.stderr).toMatch(/^stackledger build: internal error: /);
+    expect(result.stderr).toMatch(message);
+    // Nothing is published and no staging folder is left.
+    expect(existsSync(out) ? readdirSync(out) : []).toEqual([]);
+  }, 120_000);
+});
 
 test.concurrent('Built twice', async () => {
   // Same documents, other order and other file names: the build is still identical.

@@ -175,15 +175,15 @@ Labels SHALL be placed interchanges first (more lines first), then by reference,
 
 #### Scenario: Labels do not collide in the example
 - **WHEN** the fictitious example catalogue is laid out
-- **THEN** no two label boxes overlap and no label box covers a station, its shadow, a terminal badge or a badge's shadow
+- **THEN** no two label boxes overlap and no label box covers a station or a terminal badge grown by its outline
 
 #### Scenario: Larger ink pushes a label out
-- **WHEN** a label would fit next to a station marker without its ink but would touch the marker's shadow
-- **THEN** the label is placed at a candidate clear of the marker grown by its outline and shadow
+- **WHEN** a label would fit next to a station marker without its ink but would touch the marker's outline
+- **THEN** the label is placed at a candidate clear of the marker grown by its outline
 
 #### Scenario: Rule count pushes a label out
 - **WHEN** a skills station's label would fit at its first candidate, to the right, only if the station had no rule count
-- **THEN** the label is placed at a later candidate that does not cover the rule count grown by its outline and shadow
+- **THEN** the label is placed at a later candidate that does not cover the rule count grown by its outline
 
 #### Scenario: Label clears a round bend
 - **WHEN** a station's first label candidate is clear of the line's mitred polyline but would cover the inside of the arc that replaces the corner
@@ -216,18 +216,26 @@ A software map SHALL have a legend listing every drawn line in line order with i
 - **THEN** the legend has no renewal symbol
 
 ### Requirement: Themes
-The map SHALL support a `light` and a `dark` theme. Line and zone colours come from the catalogue in both themes; background, text, station, outline and shadow colours come from the theme. The `light` background SHALL be the tinted panel `#EEF2FF` and the `dark` background the navy `#14215A`. Text SHALL use the font stack `Lato, Helvetica Neue, Helvetica, Arial, sans-serif`, and station labels are bold.
+The map SHALL support a `light` and a `dark` theme. Line and zone colours come from the catalogue in both themes; background, text, station, outline and header colours come from the theme. The `light` background SHALL be `#F6F3EC` and the `dark` background `#121110`; the header band SHALL be `color.ink` in `light` and `surface.dark.panel` in `dark`. Text SHALL use the design system's `font.sans` stack as is, quotes included, and station labels are bold.
 
 #### Scenario: Dark theme
-- **WHEN** the map is drawn with the `dark` theme
-- **THEN** the background is `#14215A` and line colours are the catalogue's colours
+- **WHEN** the map is drawn with the `dark` theme and its header
+- **THEN** the background is `#121110`, the header band is filled `#1D1C1A` and line colours are the catalogue's colours
 
 #### Scenario: Light theme
-- **WHEN** the map is drawn with the `light` theme
-- **THEN** the background is `#EEF2FF`, the `font-family` starts with `Lato` and ends with `sans-serif`, and every station label has a `font-weight` of at least 700
+- **WHEN** the map is drawn with the `light` theme and its header
+- **THEN** the background is `#F6F3EC`, the header band is filled `#121212`, the parsed `font-family` starts with `'Source Sans 3'` and ends with `sans-serif`, and every station label has a `font-weight` of at least 700
+
+#### Scenario: Font stack with its quotes
+- **WHEN** any map is drawn in either theme
+- **THEN** the parsed `font-family` of its root equals `font.sans` character for character, quotes included, and the SVG text writes each of its `'` as `&apos;`
+
+#### Scenario: No header band without the header
+- **WHEN** the map is drawn in the `dark` theme without header and legend, as the site draws it
+- **THEN** the SVG has no header layer and no shape filled `#1D1C1A`
 
 ### Requirement: Licence markers
-A station SHALL carry a solid licence marker when its component lists, in `spec.dependsOn`, a served licence whose `status` is `active` or `to-confirm`; otherwise a hollow licence marker when such a licence has `status` `to-buy`. The marker is one fixed glyph, independent of cost, currency and cycle, and needs `status` to be visible in the view. Both are the design system's `licenceMark`: the solid one with `state` `owned` (green, `color.healthy`), the hollow one with `state` `toBuy` (white).
+A station SHALL carry a solid licence marker when its component lists, in `spec.dependsOn`, a served licence whose `status` is `active` or `to-confirm`; otherwise a hollow licence marker when such a licence has `status` `to-buy`. The marker is one fixed glyph, independent of cost, currency and cycle, and needs `status` to be visible in the view. Both are the design system's `licenceMark`: the solid one with `state` `owned` (`color.state.healthy`), the hollow one with `state` `toBuy` (white).
 
 #### Scenario: Active and to-buy
 - **WHEN** `editor` lists one `active` and one `to-buy` licence
@@ -275,11 +283,19 @@ Attribute names SHALL be limited to `xmlns`, `role`, `viewBox`, `width`, `height
 - **THEN** no attribute outside this list appears, `xml:base` included
 
 ### Requirement: Allowed attribute values
-`xmlns` SHALL be `http://www.w3.org/2000/svg` and `role` SHALL be `img`. Paint values SHALL be theme constants, validated `#RRGGBB` colours or `none`; no URL-valued paint is emitted. Numeric values SHALL be finite. The document SHALL contain no DOCTYPE, entity declaration or processing instruction.
+`xmlns` SHALL be `http://www.w3.org/2000/svg` and `role` SHALL be `img`. Paint values SHALL be theme constants, validated `#RRGGBB` colours or `none`; no URL-valued paint is emitted. Numeric values SHALL be finite. An apostrophe SHALL appear only in `font-family`, written as `&apos;`, and in catalogue text as "Safe SVG text" allows; the writer SHALL refuse any other value holding one. The document SHALL contain no DOCTYPE, entity declaration or processing instruction.
 
 #### Scenario: Paint values
 - **WHEN** any map is drawn
 - **THEN** every `fill` and `stroke` is `none`, a theme constant or a `#RRGGBB` colour, and no value contains `url(`
+
+#### Scenario: Apostrophe in the font stack
+- **WHEN** the example catalogue is drawn in either theme
+- **THEN** the root's `font-family` is the only attribute whose written value holds `&apos;`, and the SVG parses as XML with that attribute equal to `font.sans`
+
+#### Scenario: Apostrophe in another attribute
+- **WHEN** the map's writer is given a node whose `stroke-dasharray`, or `font-weight`, holds `'`
+- **THEN** it throws and returns no SVG
 
 ### Requirement: Safe SVG text
 Every text taken from the catalogue or a skill set SHALL be XML-escaped (`&`, `<`, `>`, `"`, `'`), with characters not allowed in XML 1.0 replaced by U+FFFD. No such text SHALL appear in an attribute except `data-ref`, `data-line` and `data-zone`, and colours are written only after matching `#RRGGBB`.
@@ -314,26 +330,38 @@ Every line stroke, station, terminal badge and legend entry SHALL carry `data-li
 - **THEN** its station has `data-line` listing `line:invoice` and `line:expenses` in line order and `data-zone="finance"`
 
 ### Requirement: Ink casing and outline
-In both themes every drawn line SHALL be a pipe: at least 12 units wide in the catalogue colour, over an ink `#0A1033` casing at least 6 units wider, both with round caps and joins. Lines sharing an edge SHALL be spaced at least the line width plus half the casing apart, so their colours never overlap. Stations, terminal badges, licence markers, renewal rings and the legend panel SHALL have an ink outline.
+In both themes every drawn line SHALL be a pipe: at least 12 units wide in the catalogue colour, over an ink `#121212` (`color.ink`) casing at least 6 units wider, both with round caps and joins. Lines sharing an edge SHALL be spaced at least the line width plus half the casing apart. Stations, terminal badges, licence markers, renewal rings and the legend panel SHALL have an outline: `color.ink` in `light` and `surface.dark.muted` in `dark`, where ink vanishes.
 
 #### Scenario: Pipe line
 - **WHEN** line `ship` in `#FF0000` is drawn in either theme
-- **THEN** its group holds a path stroked `#0A1033` at least 6 units wider than the line, followed by the same path stroked `#FF0000`, both with round joins
+- **THEN** its group holds a path stroked `#121212` at least 6 units wider than the line, followed by the same path stroked `#FF0000`, both with round joins
 
 #### Scenario: Bundled pipes fit side by side
 - **WHEN** lines `ship` and `design` both run from `a` to `b`
 - **THEN** their strokes are at least the line width plus half the casing apart
 
-### Requirement: Hard offset shadow
-Stations, terminal badges, licence markers and the legend panel SHALL have a hard offset shadow: a copy of the shape in the theme's shadow colour, moved right and down by the theme's offset, drawn first in the same group, without `transform` or `filter`. Lines and renewal rings have no shadow.
+#### Scenario: Casing on the dark surface
+- **WHEN** line `ship` in `#FF0000` is drawn in the `dark` theme
+- **THEN** its casing is stroked `#121212`, the same as in `light`
+
+#### Scenario: Outline on the dark surface
+- **WHEN** the example catalogue is drawn in the `dark` theme with its header and legend
+- **THEN** the legend panel and every station marker are stroked `#ADA79D`, and no station, terminal badge, licence marker or legend panel is stroked `#121212`
+
+### Requirement: Sticker shadow
+Stations, terminal badges, licence markers and the legend panel SHALL have a shadow only when the design system's `map.shadow` is above 0: a copy of the shape in the theme's shadow colour, moved right and down by that offset, drawn first in the same group, without `transform` or `filter`. With the pinned package `map.shadow` is 0, so no shadow copy is drawn. Lines and renewal rings have no shadow.
 
 #### Scenario: Shadow under an interchange
 - **WHEN** `slack` is an interchange drawn in the `light` theme
-- **THEN** its group holds, before the outlined marker, a shape filled `#0A1033` at the marker's position plus the theme's offset, and the SVG has no `transform` or `filter`
+- **THEN** the first shape of its group is its outlined marker, with no copy of it before it, and the SVG has no `transform` or `filter`
 
 #### Scenario: Dark shadow and rim
 - **WHEN** the map is drawn with the `dark` theme
-- **THEN** shadows are filled `#4C5CB8`, outlined stickers carry a `#EEF2FF` rim, and no shadow is filled `#0A1033`
+- **THEN** no station, terminal badge, licence marker or legend panel has a copy filled `#121110` or a rim filled `#F1EEE8` behind it
+
+#### Scenario: Shadow when the token is above 0
+- **WHEN** the sticker of `src/map/ink.ts` draws a shape with a theme whose shadow offset is 4, as a package with `map.shadow` 4 would give
+- **THEN** its first shape is a copy in the shadow colour moved 4 right and 4 down, followed by the outlined shape
 
 ### Requirement: Station references
 A station reference SHALL be `component:<name>` on a software map, with the component's `metadata.name`, and `skill:<file>`, `playbook:<file>` or `agent:<file>` on a skills map, `<file>` being the item's page file name as `stackledger skills map` gives it, without `.md`, so the reference is ASCII and names one item of its kind. A skills station's `title` SHALL hold the item's name.
@@ -407,11 +435,11 @@ On a skills map, a zone's title SHALL be placed next to its playbook's station, 
 - **THEN** their title boxes do not overlap, and `review`'s is above `release`'s
 
 ### Requirement: Software map unchanged
-For the same catalogue, view, theme and map date, the software map SHALL place every station marker and line where stackledger 0.2.0 places them, unless the catalogue holds a file named `stackledger-skills.yaml`, no longer a catalogue file. Labels and terminal badges stay where 0.2.0 places them, except a label 0.2.0 cut (more than two rows or a break inside a word) and one moved by a round bend ("Arc obstacles"). Only the painting may differ, and a corner that "Round bends" turns into an arc.
+For the same catalogue, view, theme and map date, the software map SHALL place every station marker and line where stackledger 0.2.0 places them, unless the catalogue holds a file named `stackledger-skills.yaml`, no longer a catalogue file. A label or terminal badge SHALL leave 0.2.0's place only when 0.2.0 cut the label, a round bend moves it ("Arc obstacles") or the ink around markers changed ("Sticker shadow"). Only the painting may differ, and corners "Round bends" turns into arcs.
 
 #### Scenario: Example map
 - **WHEN** the example catalogue is drawn with `stackledger map` in both views and both themes
-- **THEN** each SVG has the same station marker centres and the same label texts at the same `x` and `y` as the one recorded from 0.2.0, and each line path equals the recorded one once each arc is replaced by the corner of its two tangent segments
+- **THEN** each SVG has the station marker centres of the one recorded from 0.2.0, each line path equals the recorded one once each arc is replaced by the corner of its two tangent segments, and the label texts are at the `x` and `y` of that recording as re-recorded with design system 0.8.1
 
 #### Scenario: Software lines in a skills map file name
 - **WHEN** a catalogue keeps its software `Line` documents in a file named `stackledger-skills.yaml`
@@ -420,6 +448,10 @@ For the same catalogue, view, theme and map date, the software map SHALL place e
 #### Scenario: A cut label now wraps
 - **WHEN** the example catalogue is drawn with one component's title changed to `Northwind Customer Relationship Manager`
 - **THEN** that station's label has the three rows of "Long title", no text of the SVG ends with `…`, and the other stations keep their rows
+
+#### Scenario: Same ink, same labels
+- **WHEN** the example catalogue is laid out by `layoutMap` with the line width and `Ink` of the themes before this change (design system 0.6.0)
+- **THEN** every label and terminal badge is where 0.2.0 places it, except a label 0.2.0 cut and one moved by a round bend
 
 ### Requirement: Label word breaks
 A word longer than 18 code points SHALL start a new row and break, again and again, after its last `-`, `_`, `.` or `/` that keeps the row within 18 code points, or after 18 code points when there is none. Its last piece SHALL continue the row as a word, so the next words may join it.
@@ -437,18 +469,18 @@ A word longer than 18 code points SHALL start a new row and break, again and aga
 - **THEN** its rows are 18 and 12 code points long (18, 18 and 4 for the emoji), and joined they give the title
 
 ### Requirement: Rule count is an obstacle
-A rule count SHALL be one of the station markers for placement: labels, terminal badges and zone titles avoid it grown by its outline and shadow, and the map frame contains it.
+A rule count SHALL be one of the station markers for placement: labels, terminal badges and zone titles avoid it grown by its outline, and the map frame contains it.
 
 #### Scenario: Terminal badge clear of a rule count
 - **WHEN** a skill line ends at a station with a rule count and its terminal badge's first position would cover the count
-- **THEN** the badge is placed where it does not cover the rule count grown by its outline and shadow
+- **THEN** the badge is placed where it does not cover the rule count grown by its outline
 
 #### Scenario: Rule count inside the frame
 - **WHEN** a station with a rule count is the top-right station of a skills map
 - **THEN** the rule count's box, grown by its ink, lies inside the map frame
 
 ### Requirement: Rule count on skills stations
-On a skills map, the station of a skill or playbook with at least one rule in the skill set (skill-source "Rules files", "Rule IDs"; the number the `/skills/` list shows) SHALL carry a rule count at the upper right of its marker: that number, or `99+` above 99, in a circle for one digit or a pill for more, in the panel colour, outlined and shadowed as a licence marker. Agents and software maps have none.
+On a skills map, the station of a skill or playbook with at least one rule in the skill set (skill-source "Rules files", "Rule IDs"; the number the `/skills/` list shows) SHALL carry a rule count at the upper right of its marker: that number, or `99+` above 99, in a circle for one digit or a pill for more, in the panel colour, outlined as a licence marker. Agents and software maps have none.
 
 #### Scenario: Skill with rules
 - **WHEN** skill `writer` defines 3 rules and agent `reviewer` and skill `editor` (no `rules.md`) are stations of the same skills map
@@ -467,21 +499,29 @@ On a skills map, the station of a skill or playbook with at least one rule in th
 - **THEN** no station holds a rule count
 
 ### Requirement: Design system tokens
-The `light` and `dark` themes SHALL take their colours and ink measures from the tokens of `@brunosouzas/design-system`, pinned to one exact version: background, text, muted, grid, panel, shadow colour, rim colour and rim width from `surface.<theme>`; outline width, shadow offset, line width, casing and bend radius from `map`; ink, station, badge text, licence, renewal and accent colours from `color`. The font stack stays the one of "Themes".
+The `light` and `dark` themes SHALL take their colours and ink measures from the tokens of `@brunosouzas/design-system`, pinned to one exact version: background, text, muted, grid, panel, shadow colour, rim colour and rim width from `surface.<theme>`; outline width, shadow offset, line width, casing and bend radius from `map`; ink, station and badge text from `color`; licence, renewal and accent colours from `color.state`; the font stack from `font.sans` ("Themes").
 
 #### Scenario: Theme values are the tokens
 - **WHEN** the `dark` theme is read
-- **THEN** its background equals `surface.dark.background`, its shadow colour `surface.dark.shadow`, its rim width `surface.dark.rimWidth`, its outline width `map.outline`, its line width `map.lineWidth` and its bend radius `map.bendRadius`
+- **THEN** its background equals `surface.dark.background`, its outline colour `surface.dark.muted`, its shadow colour `surface.dark.shadow`, its rim width `surface.dark.rimWidth`, its outline width `map.outline`, its line width `map.lineWidth` and its bend radius `map.bendRadius`
 
 #### Scenario: Light theme has no rim
 - **WHEN** the `light` theme is read
-- **THEN** its rim is disabled, because `surface.light.rimWidth` is 0, and `inkOf` gives an outline equal to `map.outline`
+- **THEN** its rim is disabled, because `surface.light.rimWidth` is 0, its outline colour is `color.ink`, and `inkOf` gives an outline equal to `map.outline`
+
+#### Scenario: Dark theme has no rim and no shadow
+- **WHEN** the `dark` theme is read
+- **THEN** its rim is disabled, because `surface.dark.rimWidth` is 0, and `inkOf` gives an outline equal to `map.outline` and a shadow of `[0, 0]`, because `map.shadow` is 0
+
+#### Scenario: State colours are the tokens
+- **WHEN** either theme is read
+- **THEN** its licence colour is `color.state.healthy` (`#3DDC84`), its renewal colour `color.state.blocked` (`#FF8A3D`) and its accent `color.state.caller` (`#8FB2FF`)
 
 ### Requirement: Theme ink comes from the design system
 The map and diagram renderers SHALL refuse, with an error naming the field, a theme whose outline colour or width, shadow, rim, casing, line width, bend radius, licence colour, renewal colour, zone opacity or zone title tint differs from the tokens of its `surface`, because the pieces paint those from the tokens and the layout must count the same ink and the same arcs. Other theme fields are not checked.
 
 #### Scenario: Custom ink is refused
-- **WHEN** `renderSvg` is given a copy of `themes.light` with `outlineWidth` 9, or with the shadow turned off
+- **WHEN** `renderSvg` is given a copy of `themes.light` with `outlineWidth` 9, or with a shadow offset of 4
 - **THEN** it throws an error naming `outlineWidth`, or `shadow`, and returns no SVG
 
 #### Scenario: Custom piece colour is refused
@@ -513,10 +553,10 @@ Stop and interchange markers, lines, terminal badges and rule counts SHALL be dr
 
 #### Scenario: Piece text has no font of its own
 - **WHEN** any map is drawn
-- **THEN** only the root `svg` element carries `font-family`, and no attribute value holds an apostrophe
+- **THEN** only the root `svg` element carries `font-family`, and no attribute other than `font-family` and those carrying catalogue text (`data-zone`, escaped as `&apos;`) holds an apostrophe
 
 ### Requirement: Legend interchange symbol
-The legend's interchange symbol SHALL be a vertical capsule drawn by `stationMarker` with radius 6 from 1.5 units above to 1.5 units below the symbol's centre point, so that with its outline, rim and shadow it stays inside the 24 × 24 symbol in both themes.
+The legend's interchange symbol SHALL be a vertical capsule drawn by `stationMarker` with radius 6 from 1.5 units above to 1.5 units below the symbol's centre point, so that with its outline it stays inside the 24 × 24 symbol in both themes.
 
 #### Scenario: Legend interchange is a capsule
 - **WHEN** the interchange symbol is drawn on its own, in either theme
@@ -534,11 +574,11 @@ Licence markers, renewal rings, suggested halos and zones SHALL be drawn by the 
 - **THEN** the map is drawn in both themes, with its halo, ring, licence marker and zone drawn by the pieces at that point
 
 ### Requirement: Piece colours in the themes
-The `light` and `dark` themes SHALL hold the values the pieces paint: licence colour `color.healthy`, renewal colour `color.blocked`, zone opacity `surface.<theme>.zoneOpacity`, and zone title tint `map.zoneTitleTint` in `dark` and 0 in `light`.
+The `light` and `dark` themes SHALL hold the values the pieces paint: licence colour `color.state.healthy`, renewal colour `color.state.blocked`, zone opacity `surface.<theme>.zoneOpacity`, and zone title tint `map.zoneTitleTint` in `dark` and 0 in `light`.
 
 #### Scenario: Piece colours are the tokens
 - **WHEN** the `dark` theme is read
-- **THEN** its licence colour is `color.healthy`, its renewal colour `color.blocked`, its zone opacity `surface.dark.zoneOpacity` and its zone title tint `map.zoneTitleTint`
+- **THEN** its licence colour is `color.state.healthy`, its renewal colour `color.state.blocked`, its zone opacity `surface.dark.zoneOpacity` and its zone title tint `map.zoneTitleTint`
 
 #### Scenario: Light zone titles are not tinted
 - **WHEN** the `light` theme is read
@@ -631,15 +671,15 @@ Each arc of a round bend SHALL be a label and terminal badge obstacle as chords 
 - **THEN** that candidate counts as overlapping the line
 
 ### Requirement: Map backdrop
-The software map SHALL take a backdrop, `neutral` or `london`, with or without its header and legend. With `neutral` the SVG SHALL be the same, byte for byte, as stackledger 0.5.1 draws it. A backdrop SHALL NOT move any station, line, label, badge, zone, header or legend. The skills map, the neighbourhood diagrams, the strips and the relation diagram SHALL NOT take a backdrop.
+The software map SHALL take a backdrop, `neutral` or `london`, with or without its header and legend. With `neutral` the SVG SHALL have no backdrop group and no credit, and be the same, byte for byte, as the neutral maps re-recorded with design system 0.8.1. A backdrop SHALL NOT move any station, line, label, badge, zone, header or legend. The skills map, the neighbourhood diagrams, the strips and the relation diagram SHALL NOT take a backdrop.
 
 #### Scenario: Neutral is today's map
 - **WHEN** the example catalogue is drawn with `neutral`, map date 2027-06-01, in the `full` view and both themes
-- **THEN** each SVG equals, byte for byte, `docs/images/map-light.svg` and `docs/images/map-dark.svg` as committed in 0.5.1, and the `staff` view in both themes equals the SVG recorded from 0.5.1 with the same options
+- **THEN** each SVG equals, byte for byte, `docs/images/map-light.svg` and `docs/images/map-dark.svg` as re-recorded with design system 0.8.1, and the `staff` view in both themes equals the SVG re-recorded with design system 0.8.1 with the same options
 
 #### Scenario: Neutral site map is today's map
 - **WHEN** the example catalogue's software map is drawn without header and legend, as the site draws it, with `neutral`, in both views and both themes
-- **THEN** each SVG equals, byte for byte, the one recorded from 0.5.1 with the same options
+- **THEN** each SVG equals, byte for byte, the one re-recorded with design system 0.8.1 with the same options
 
 #### Scenario: Backdrop moves nothing
 - **WHEN** the example catalogue is drawn with `london` and with `neutral` in both views and both themes
@@ -659,6 +699,10 @@ With `london` the SVG SHALL hold one more group, right after the background laye
 #### Scenario: London colours are the tokens
 - **WHEN** the example catalogue is drawn with `london` in the `dark` theme
 - **THEN** the water fill equals `surface.dark.backdropWater`, its stroke `surface.dark.backdropWaterEdge` and the park fill `surface.dark.backdropPark`
+
+#### Scenario: London colours on the v2 surfaces
+- **WHEN** the example catalogue is drawn with `london` in the `light` theme, then in the `dark` theme
+- **THEN** the water is filled `#C7DAEA` and stroked `#A9C4DA` and the parks filled `#D6E4CF` in `light`, and `#1C2733`, `#2A3846` and `#1A241D` in `dark`
 
 #### Scenario: Holes without fill-rule
 - **WHEN** the London data is drawn in either theme
@@ -695,6 +739,10 @@ A software map drawn with a city backdrop SHALL end, before the closing tag, wit
 #### Scenario: Credit on London
 - **WHEN** the example catalogue is drawn with `london` in either theme, with and without its header and legend
 - **THEN** the SVG contains the text `© OpenStreetMap contributors`, its box lies inside the viewBox and does not overlap the legend
+
+#### Scenario: Credit colour on the v2 surfaces
+- **WHEN** the example catalogue is drawn with `london` in the `light` theme, then in the `dark` theme
+- **THEN** the credit text is filled `#5C5852` in `light` and `#ADA79D` in `dark`
 
 #### Scenario: No credit on neutral
 - **WHEN** the example catalogue is drawn with `neutral`
