@@ -4,7 +4,7 @@
 
 ## 1. Release pull request and title
 
-- [x] 1.1 `Release PR` and `Title` workflows, `release-please-config.json`, `.release-please-manifest.json` (scenarios Caller, Configuration, Manifest out of step, Title workflow, Title workflow on another event): `test/unit/release-workflow.test.ts` (unit) reads the files
+- [x] 1.1 `Release PR` and `Title` workflows, `release-please-config.json`, `.release-please-manifest.json` (scenarios Caller, Configuration, Manifest out of step, Title workflow, Title workflow on another event): `test/unit/release-workflow.test.ts` (unit) reads the files; the README's version: `test/unit/deployment-docs.test.ts` (unit)
 - [x] 1.2 A merge that does not change the version: the existing unit test for "A later merge with the same version" in `test/unit/release-detect.test.ts` (unit) proves it; no new test
 
 ## 2. Release app

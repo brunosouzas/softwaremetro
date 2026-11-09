@@ -34,7 +34,7 @@ stackledger is a small, local-first tool for people and small companies who want
 
 ## Status
 
-Early development; the latest release on npm is `@brunosouzas/stackledger` 0.8.0. The catalogue format, the `validate`, `map`, `build` and `report` commands, the `mcp` server, Mac discovery (`stackledger discover` and `stackledger drift`), the agent skills check and map (`stackledger skills validate` and `stackledger skills map`) and the Skills section of the site (`stackledger build --skills`) work from npm or from source (see [Usage](#usage)). The order of the rest is in the [roadmap](docs/roadmap.md).
+Early development; the latest release on npm is `@brunosouzas/stackledger` 0.8.0. The catalogue format, the `validate`, `map`, `build` and `report` commands, the `mcp` server, Mac discovery (`stackledger discover` and `stackledger drift`), the agent skills check and map (`stackledger skills validate` and `stackledger skills map`) and the Skills section of the site (`stackledger build --skills`) work from npm or from source (see [Usage](#usage)). The order of the rest is in the [roadmap](docs/roadmap.md). <!-- x-release-please-version -->
 
 For a separate catalogue repository, copy the [pipeline template](examples/catalogue-repository/). Set up [protected hosting](docs/hosting.md) before the first deploy. The fictitious Northwind catalogue and its skill set run as a [demo](docs/demo.md) of the corporate mode, Software and Skills, at <https://stackledger-demo.pages.dev/>; it is protected by Cloudflare Access and only the owner can sign in, so for you it shows the sign-in page, which is the point. The [release guide](docs/release.md) covers npm publication, provenance and the SBOM.
 
@@ -89,10 +89,12 @@ stackledger does not call any AI model. Instead, a read-only [MCP](https://model
 
 Use npm with Node.js 22.12 or later. The package is `@brunosouzas/stackledger` from 0.4.1, the same code as 0.4.0; versions up to 0.4.0 were published as `stackledger`, now deprecated, and the command is `stackledger` in both. Version 0.8.0 moves the maps, the diagrams and the site to the identity v2 of `@brunosouzas/design-system` 0.8.1: Source Sans 3, Source Serif 4 and Source Code Pro through Astro's Fonts API (each site gains `_astro/fonts.css`; the security policy does not change), stackledger's own accent, the outline frame without shadow, the wordmark, the parent brand's endorsement and a new home banner; the catalogue format and the commands do not change. 0.7.0 makes discovery show what a launchd job runs (the script of an interpreter job) and the helpers apps declare in their bundles (login items, agents and daemons); a snapshot it writes is not read by `drift` 0.6.0. 0.6.0 adds the city backdrop of the software map (`spec.map.backdrop`, `stackledger map --backdrop`); 0.5.1 never shows a map larger than it is drawn; 0.5.0 draws the maps, the diagrams and the site with `@brunosouzas/design-system` (home banner, link icons, round bends); 0.4.0 added the home page (the map moves to `/map/`, the default title becomes `stackledger`, `spec.site.home`), whole station names on both maps and rule counts on the skills map, and skips hidden folders in a catalogue; 0.3.0 added the Skills section of `stackledger build` (`--skills`, `spec.skills.folders`, `stackledger-skills.yaml`); 0.2.0 added the agent skills commands (`skills validate`, `.stackledgerignore`, `skills map`); 0.1.0 has the catalogue commands only.
 
+<!-- x-release-please-start-version -->
 ```sh
 npx @brunosouzas/stackledger@0.8.0 --help
 npx @brunosouzas/stackledger@0.8.0 validate /path/to/catalogue
 ```
+<!-- x-release-please-end -->
 
 To run it from source (for development, or a change not yet on npm):
 

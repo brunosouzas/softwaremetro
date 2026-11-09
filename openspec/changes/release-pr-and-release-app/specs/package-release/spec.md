@@ -12,11 +12,11 @@ A `Release PR` workflow with `permissions: {}` SHALL run on every push to `main`
 - **THEN** the release workflow's detection answers `release=false`; the release pull request lives on release-please's own branch, which `release.yml` does not watch
 
 ### Requirement: Release-please configuration
-`release-please-config.json` SHALL declare one package `.` of release type `node`, with `include-component-in-tag: false`, `bump-minor-pre-major: true` and `changelog-path: CHANGELOG.md`; `.release-please-manifest.json` SHALL hold the version in `package.json`.
+`release-please-config.json` SHALL declare one package `.` of release type `node`, with `include-component-in-tag: false`, `bump-minor-pre-major: true`, `changelog-path: CHANGELOG.md` and `README.md` as a generic extra file (its marked lines carry the version); `.release-please-manifest.json` SHALL hold the version in `package.json`.
 
 #### Scenario: Configuration
 - **WHEN** the configuration files are read
-- **THEN** they have those values, and the manifest's version equals `version` in `package.json`
+- **THEN** they have those values, the manifest's version equals `version` in `package.json`, and the README's install commands and latest-release line name that version
 
 #### Scenario: Manifest out of step
 - **WHEN** the manifest's version differs from `version` in `package.json`

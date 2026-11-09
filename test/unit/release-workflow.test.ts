@@ -167,7 +167,8 @@ describe('Release pull request and titles', () => {
 
   test('Configuration: one node package, no component in the tag, minor bumps before 1.0, CHANGELOG.md', () => {
     expect(JSON.parse(read('release-please-config.json')).packages).toEqual({
-      '.': { 'release-type': 'node', 'bump-minor-pre-major': true, 'include-component-in-tag': false, 'changelog-path': 'CHANGELOG.md' },
+      '.': { 'release-type': 'node', 'bump-minor-pre-major': true, 'include-component-in-tag': false, 'changelog-path': 'CHANGELOG.md',
+        'extra-files': [{ type: 'generic', path: 'README.md' }] },
     });
   });
 
