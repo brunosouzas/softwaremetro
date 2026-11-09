@@ -20,7 +20,7 @@ function git(cwd: string, ...args: string[]) {
   return result.stdout.trim();
 }
 
-/** main: 0.1.0 (tagged), then 0.2.0 (the version pull request), then a README fix. */
+/** main: 0.1.0 (tagged), then 0.2.0 (the release pull request), then a README fix. */
 function history() {
   const cwd = folder();
   git(cwd, 'init', '-q', '-b', 'main');
