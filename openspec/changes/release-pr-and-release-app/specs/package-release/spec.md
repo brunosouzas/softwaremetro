@@ -45,10 +45,10 @@ The publishing job SHALL give `scripts/release-publish.sh` as `GH_TOKEN` a token
 - **THEN** the token step comes after the checkout and the download and before the step that runs the publishing script, that step's `GH_TOKEN` is the token step's output, and `github.token` appears nowhere in the workflow, so a token step that fails stops the job before anything is published
 
 ### Requirement: Release app's own tag
-The detection SHALL take `github.actor` as an optional sixth argument and the release app's bot login from `RELEASE_APP_BOT`, set in the detection step's `env` to `stackledger-release[bot]`. For a pushed tag whose actor equals a non-empty `RELEASE_APP_BOT` it SHALL answer `release=false`, keeping `tag`: the run that created the tag is already releasing it.
+The detection SHALL take `github.actor` as an optional sixth argument and the release app's bot login from `RELEASE_APP_BOT`, set in the detection step's `env` to `brunosouzas-stackledger-release[bot]`. For a pushed tag whose actor equals a non-empty `RELEASE_APP_BOT` it SHALL answer `release=false`, keeping `tag`: the run that created the tag is already releasing it.
 
 #### Scenario: Tag pushed by the release app
-- **WHEN** the push is the tag `v0.2.0` and the sixth argument is `stackledger-release[bot]`, equal to `RELEASE_APP_BOT`
+- **WHEN** the push is the tag `v0.2.0` and the sixth argument is `brunosouzas-stackledger-release[bot]`, equal to `RELEASE_APP_BOT`
 - **THEN** the detection answers `release=false` with `tag=v0.2.0` and a line naming the actor
 
 #### Scenario: Another actor, no actor or no bot name
@@ -57,7 +57,7 @@ The detection SHALL take `github.actor` as an optional sixth argument and the re
 
 #### Scenario: Workflow wiring
 - **WHEN** the release workflow file is read
-- **THEN** the detection step's `env` holds `ACTOR: ${{ github.actor }}` and `RELEASE_APP_BOT: stackledger-release[bot]`, and its command passes `"$ACTOR"` as the sixth argument
+- **THEN** the detection step's `env` holds `ACTOR: ${{ github.actor }}` and `RELEASE_APP_BOT: brunosouzas-stackledger-release[bot]`, and its command passes `"$ACTOR"` as the sixth argument
 
 ## MODIFIED Requirements
 

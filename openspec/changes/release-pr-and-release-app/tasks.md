@@ -4,14 +4,14 @@
 
 ## 1. Release pull request and title
 
-- [ ] 1.1 `Release PR` and `Title` workflows, `release-please-config.json`, `.release-please-manifest.json` (scenarios Caller, Configuration, Manifest out of step, Title workflow, Title workflow on another event): `test/unit/release-workflow.test.ts` (unit) reads the files
-- [ ] 1.2 A merge that does not change the version: the existing unit test for "A later merge with the same version" in `test/unit/release-detect.test.ts` (unit) proves it; no new test
+- [x] 1.1 `Release PR` and `Title` workflows, `release-please-config.json`, `.release-please-manifest.json` (scenarios Caller, Configuration, Manifest out of step, Title workflow, Title workflow on another event): `test/unit/release-workflow.test.ts` (unit) reads the files
+- [x] 1.2 A merge that does not change the version: the existing unit test for "A later merge with the same version" in `test/unit/release-detect.test.ts` (unit) proves it; no new test
 
 ## 2. Release app
 
-- [ ] 2.1 Publishing job with the release app's token (scenarios Publishing job, Contents only, Token before publishing): `test/unit/release-workflow.test.ts` (unit)
-- [ ] 2.2 Detection skips the release app's own tag (scenarios Tag pushed by the release app, Another actor, no actor or no bot name, Pushed tag and other refs): `test/unit/release-detect.test.ts` (unit); Workflow wiring: `test/unit/release-workflow.test.ts` (unit); each guard proven by mutation; the unchanged scenarios of Release on the version merge (The version merge releases, A later merge with the same version, Version whose tag exists, Several commits in one push, Forced or rewritten main) stay proven by the existing tests in `test/unit/release-detect.test.ts` (unit), rerun
+- [x] 2.1 Publishing job with the release app's token (scenarios Publishing job, Contents only, Token before publishing): `test/unit/release-workflow.test.ts` (unit)
+- [x] 2.2 Detection skips the release app's own tag (scenarios Tag pushed by the release app, Another actor, no actor or no bot name, Pushed tag and other refs): `test/unit/release-detect.test.ts` (unit); Workflow wiring: `test/unit/release-workflow.test.ts` (unit); each guard proven by mutation; the unchanged scenarios of Release on the version merge (The version merge releases, A later merge with the same version, Version whose tag exists, Several commits in one push, Forced or rewritten main) stay proven by the existing tests in `test/unit/release-detect.test.ts` (unit), rerun
 
 ## 3. Documentation
 
-- [ ] 3.1 `docs/release.md` (release pull request, release app, tag ruleset with the app and the owner's admin bypass), `AGENTS.md`: `Model: 2 release PR`, the `Deliver and verify` line and the release rule rewritten for the release pull request (line 11 and line 26 today), Conventional Commit titles
+- [x] 3.1 `docs/release.md` (release pull request, release app, tag ruleset with the app and the owner's admin bypass), `AGENTS.md`: `Model: 2 release PR`, the `Deliver and verify` line and the release rule rewritten for the release pull request (line 11 and line 26 today), Conventional Commit titles

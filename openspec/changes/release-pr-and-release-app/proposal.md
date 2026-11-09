@@ -2,7 +2,7 @@
 
 ## Why
 
-Releases move to delivery model 2 (card AB#243): release-please keeps a release pull request from the Conventional Commit titles that reach `main`, so nobody sets the version by hand and every release carries its changelog. A pull request opened with `GITHUB_TOKEN` starts no checks, so release-please needs a GitHub App; the owner decided one app per repository (`stackledger-release`, AB#251 Q1). The same app then creates the release tag, as in `brunosouzas-design-system` (AB#251, AB#243 Q4), so the `v*` tag ruleset can refuse every identity but the app and the owner, who keeps an admin bypass to tag by hand or retry (the manual tag path of `Release tags` stays).
+Releases move to delivery model 2 (card AB#243): release-please keeps a release pull request from the Conventional Commit titles that reach `main`, so nobody sets the version by hand and every release carries its changelog. A pull request opened with `GITHUB_TOKEN` starts no checks, so release-please needs a GitHub App; the owner decided one app per repository (`brunosouzas-stackledger-release`, AB#251 Q1). The same app then creates the release tag, as in `brunosouzas-design-system` (AB#251, AB#243 Q4), so the `v*` tag ruleset can refuse every identity but the app and the owner, who keeps an admin bypass to tag by hand or retry (the manual tag path of `Release tags` stays).
 
 ## What Changes
 

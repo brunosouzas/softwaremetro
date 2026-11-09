@@ -7,12 +7,15 @@
  * and the tag v<version> does not exist yet. So a later merge (a README fix) never releases again,
  * even while the version still waits for the owner's approval. A pushed tag v* always goes on to the
  * tag check: that is how the owner releases by hand or retries (package-release spec, Release on the
- * version merge, Detection errors; the same flow as brunosouzas-design-system).
+ * version merge, Detection errors; the same flow as brunosouzas-design-system). Except the release app's
+ * own tag (spec, Release app's own tag): the publishing job creates the tag as the app
+ * brunosouzas-stackledger-release, a tag made with an app's token starts the workflow again, and the run
+ * that made it is already releasing; its actor (the sixth argument) equals RELEASE_APP_BOT.
  *
  * Run from the repository root, after a checkout with the full history and the tags (fetch-depth: 0):
- *   node scripts/release-detect.mjs <ref-type> <ref-name> <before-sha> <after-sha> [<forced>]
+ *   node scripts/release-detect.mjs <ref-type> <ref-name> <before-sha> <after-sha> [<forced>] [<actor>]
  * (in the workflow: github.ref_type, github.ref_name, github.event.before, github.sha,
- * github.event.forced, all through env).
+ * github.event.forced, github.actor, all through env; RELEASE_APP_BOT from the step's env).
  * Prints `release=<true|false>` and `tag=<tag>` on stdout for $GITHUB_OUTPUT, and one line on stderr
  * that says why. Exit 0 in both cases; exit 1, with nothing on stdout, when it cannot tell.
  * The rules are applied in order, the first match winning (spec, Detection errors).
@@ -57,11 +60,15 @@ function versionAt(sha, { strict }) {
   return 'missing';
 }
 
-const [refType, refName, before, after, forced] = process.argv.slice(2);
+const [refType, refName, before, after, forced, actor = ''] = process.argv.slice(2);
 if (!refType || !refName || before === undefined || !after) {
-  fail('usage: release-detect.mjs <ref-type> <ref-name> <before-sha> <after-sha> [<forced>]');
+  fail('usage: release-detect.mjs <ref-type> <ref-name> <before-sha> <after-sha> [<forced>] [<actor>]');
 }
 
+const appBot = process.env.RELEASE_APP_BOT ?? '';
+if (refType === 'tag' && appBot !== '' && actor === appBot) {
+  answer(false, refName, `tag ${refName} pushed by ${actor}: the run that created it releases it`);
+}
 if (refType === 'tag') answer(true, refName, `tag ${refName} pushed: the tag check decides`);
 if (refType !== 'branch' || refName !== 'main') answer(false, '', `push to ${refType} ${refName}: nothing to release`);
 

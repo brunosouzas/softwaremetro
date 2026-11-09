@@ -38,8 +38,14 @@ function history() {
   return { cwd, first, bump, readme, commit };
 }
 
+const appBot = 'brunosouzas-stackledger-release[bot]';
+
 function detect(cwd: string, ...args: string[]) {
-  const result = spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8', env: gitEnv });
+  return detectWith({ RELEASE_APP_BOT: appBot }, cwd, ...args);
+}
+
+function detectWith(extra: Record<string, string>, cwd: string, ...args: string[]) {
+  const result = spawnSync(process.execPath, [script, ...args], { cwd, encoding: 'utf8', env: { ...gitEnv, ...extra } });
   return { status: result.status, out: result.stdout, why: result.stderr };
 }
 
@@ -85,6 +91,26 @@ describe('Release on the version merge', { timeout: 30_000 }, () => {
     expect(detect(cwd, 'branch', 'ab172-x', first, bump, 'false').out).toBe('release=false\ntag=\n');
     expect(detect(cwd, 'branch', 'main', zeros, bump, 'false').out).toBe('release=false\ntag=\n');
     expect(detect(cwd, 'branch', 'main', 'f'.repeat(40), bump, 'false').out).toBe('release=false\ntag=\n');
+  });
+});
+
+describe("Release app's own tag", { timeout: 30_000 }, () => {
+  test('Tag pushed by the release app', () => {
+    const { cwd, bump } = history();
+    const result = detect(cwd, 'tag', 'v0.2.0', zeros, bump, 'false', appBot);
+    expect(result).toMatchObject({ status: 0, out: 'release=false\ntag=v0.2.0\n' });
+    expect(result.why).toContain(appBot);
+  });
+
+  test('Another actor, no actor or no bot name', () => {
+    const { cwd, bump } = history();
+    for (const actor of ['brunosouzas', 'other-app[bot]']) {
+      expect(detect(cwd, 'tag', 'v0.2.0', zeros, bump, 'false', actor).out, actor).toBe('release=true\ntag=v0.2.0\n');
+    }
+    expect(detect(cwd, 'tag', 'v0.2.0', zeros, bump, 'false').out).toBe('release=true\ntag=v0.2.0\n');
+    expect(detectWith({ RELEASE_APP_BOT: '' }, cwd, 'tag', 'v0.2.0', zeros, bump, 'false', appBot).out).toBe('release=true\ntag=v0.2.0\n');
+    // No bot name and no actor: an empty name must never match an empty actor.
+    expect(detectWith({ RELEASE_APP_BOT: '' }, cwd, 'tag', 'v0.2.0', zeros, bump, 'false').out).toBe('release=true\ntag=v0.2.0\n');
   });
 });
 
