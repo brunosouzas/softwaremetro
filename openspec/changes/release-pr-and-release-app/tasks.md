@@ -1,6 +1,6 @@
 ## 0. Precondition
 
-- [ ] 0.1 The tag `v0.1.0` of `brunosouzas/github-reusable-workflows` exists with the interface this change calls (input `environment`, secret `RELEASE_APP_PRIVATE_KEY`, variable `RELEASE_APP_CLIENT_ID`): `git ls-remote --tags https://github.com/brunosouzas/github-reusable-workflows v0.1.0` prints one line, and `gh api repos/brunosouzas/github-reusable-workflows/contents/.github/workflows/release-please.yml?ref=v0.1.0` holds `RELEASE_APP_PRIVATE_KEY`
+- [x] 0.1 The tag `v0.1.0` of `brunosouzas/github-reusable-workflows` exists with the interface this change calls (input `environment`, secret `RELEASE_APP_PRIVATE_KEY`, variable `RELEASE_APP_CLIENT_ID`): `git ls-remote --tags https://github.com/brunosouzas/github-reusable-workflows v0.1.0` prints one line, and `gh api repos/brunosouzas/github-reusable-workflows/contents/.github/workflows/release-please.yml?ref=v0.1.0` holds `RELEASE_APP_PRIVATE_KEY`
 
 ## 1. Release pull request and title
 
