@@ -10,7 +10,7 @@
 ## 2. Release app
 
 - [ ] 2.1 Publishing job with the release app's token (scenarios Publishing job, Contents only, Token before publishing): `test/unit/release-workflow.test.ts` (unit)
-- [ ] 2.2 Detection skips the release app's own tag (scenarios Tag pushed by the release app, Another actor, no actor or no bot name, Pushed tag and other refs): `test/unit/release-detect.test.ts` (unit); Workflow wiring: `test/unit/release-workflow.test.ts` (unit); each guard proven by mutation
+- [ ] 2.2 Detection skips the release app's own tag (scenarios Tag pushed by the release app, Another actor, no actor or no bot name, Pushed tag and other refs): `test/unit/release-detect.test.ts` (unit); Workflow wiring: `test/unit/release-workflow.test.ts` (unit); each guard proven by mutation; the unchanged scenarios of Release on the version merge (The version merge releases, A later merge with the same version, Version whose tag exists, Several commits in one push, Forced or rewritten main) stay proven by the existing tests in `test/unit/release-detect.test.ts` (unit), rerun
 
 ## 3. Documentation
 

@@ -16,7 +16,7 @@ Out of scope: the title rule and the release-please logic (the reusable workflow
 
 ## Implicit requirements
 
-- Errors and invalid input: an empty Client ID or key stops the release pull request run at its first step with a named error (the reusable workflow); a release app that cannot create the tag stops the publishing job before npm (`Tag reserved before publishing`, unchanged).
+- Errors and invalid input: the publishing requirement keeps its error behaviour in `Completing a partial release` and `Tag reserved before publishing` (unchanged), so its MODIFIED text adds no error scenario; an empty Client ID or key stops the release pull request run at its first step with a named error (the reusable workflow); a release app that cannot create the tag stops the publishing job before npm (`Tag reserved before publishing`, unchanged).
 - Limits: n/a, one release pull request per repository.
 - Repetition and idempotency: release-please rewrites its pull request on every push; a re-run of the publishing job keeps `Completing a partial release` (unchanged); the app's own tag push releases nothing.
 - Concurrency: unchanged (`One release of a version at a time`); the reusable workflow has its own concurrency group.

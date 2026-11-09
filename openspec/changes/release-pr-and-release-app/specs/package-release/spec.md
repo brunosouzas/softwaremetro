@@ -8,8 +8,8 @@ A `Release PR` workflow with `permissions: {}` SHALL run on every push to `main`
 - **THEN** the `Release PR` workflow has `permissions: {}`, runs on pushes to `main` only, and uses the reusable workflow at `@v0.1.0` with `skip-github-release: true` and the secret passed by name (not `inherit`)
 
 #### Scenario: A merge that does not change the version
-- **WHEN** a push to `main` does not change `version` (release-please then updates its pull request on its own branch, which `release.yml` ignores)
-- **THEN** the release workflow's detection answers `release=false`
+- **WHEN** a push to `main` does not change `version`
+- **THEN** the release workflow's detection answers `release=false`; the release pull request lives on release-please's own branch, which `release.yml` does not watch
 
 ### Requirement: Release-please configuration
 `release-please-config.json` SHALL declare one package `.` of release type `node`, with `include-component-in-tag: false`, `bump-minor-pre-major: true` and `changelog-path: CHANGELOG.md`; `.release-please-manifest.json` SHALL hold the version in `package.json`.
@@ -20,7 +20,7 @@ A `Release PR` workflow with `permissions: {}` SHALL run on every push to `main`
 
 #### Scenario: Manifest out of step
 - **WHEN** the manifest's version differs from `version` in `package.json`
-- **THEN** the unit test fails naming both versions
+- **THEN** the configuration is invalid, and `test/unit/release-workflow.test.ts` reports both versions
 
 ### Requirement: Conventional Commit pull request titles
 A `Title` workflow with `permissions: {}` SHALL run on pull requests (opened, edited, synchronize, reopened) and call `brunosouzas/github-reusable-workflows/.github/workflows/pr-title.yml@v0.1.0` from a job with the id `pr-title`. The title rule itself belongs to that reusable workflow at the pinned tag.
