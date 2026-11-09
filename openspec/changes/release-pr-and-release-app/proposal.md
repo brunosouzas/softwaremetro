@@ -2,7 +2,7 @@
 
 ## Why
 
-Releases move to delivery model 2 (card AB#243): release-please keeps a release pull request from the Conventional Commit titles that reach `main`, so nobody sets the version by hand and every release carries its changelog. A pull request opened with `GITHUB_TOKEN` starts no checks, so release-please needs a GitHub App; the owner decided one app per repository (`stackledger-release`, AB#251 Q1). The same app then creates the release tag, as in `brunosouzas-design-system` (AB#251, AB#243 Q4), so the `v*` tag ruleset can refuse every other identity.
+Releases move to delivery model 2 (card AB#243): release-please keeps a release pull request from the Conventional Commit titles that reach `main`, so nobody sets the version by hand and every release carries its changelog. A pull request opened with `GITHUB_TOKEN` starts no checks, so release-please needs a GitHub App; the owner decided one app per repository (`stackledger-release`, AB#251 Q1). The same app then creates the release tag, as in `brunosouzas-design-system` (AB#251, AB#243 Q4), so the `v*` tag ruleset can refuse every identity but the app and the owner, who keeps an admin bypass to tag by hand or retry (the manual tag path of `Release tags` stays).
 
 ## What Changes
 
@@ -12,7 +12,7 @@ Releases move to delivery model 2 (card AB#243): release-please keeps a release 
 - The detection answers `release=false` for a tag pushed by the release app: a tag made with an app's token starts the workflow again, and the run that made it is already releasing.
 - `AGENTS.md` declares `Model: 2 release PR`; `docs/release.md` describes the release pull request and the release app.
 
-Out of scope: the reusable workflows themselves (their own repository), the tag ruleset and the repository settings (applied by the owner's login after the merge, AB#243), the Hermes plugins (AB#318), any change to what the package contains.
+Out of scope: the title rule and the release-please logic (the reusable workflows at `v0.1.0`, in their own repository), the tag ruleset and the repository settings (applied by the owner's login after the merge, AB#243), the Hermes plugins (AB#318), any change to what the package contains.
 
 ## Implicit requirements
 
