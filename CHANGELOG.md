@@ -1,0 +1,8 @@
+# Changelog
+
+## [0.8.1](https://github.com/brunosouzas/stackledger/compare/v0.8.0...v0.8.1) (2026-11-09)
+
+
+### Features
+
+* release pull request and the release app (AB[#243](https://github.com/brunosouzas/stackledger/issues/243)) ([#51](https://github.com/brunosouzas/stackledger/issues/51)) ([bba3bbf](https://github.com/brunosouzas/stackledger/commit/bba3bbfe9a4f11aa5b3ee43ad86b2a06dfb1cb4d))
