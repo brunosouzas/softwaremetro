@@ -1,5 +1,7 @@
-/** .github/workflows/release.yml (package-release spec: Checks without publishing rights,
- * Publication of the checked tarball, Release workflow hardening). Run npm test.
+/** .github/workflows/release.yml, release-please.yml and title.yml (package-release spec: Checks without
+ * publishing rights, Publication of the checked tarball, Release workflow hardening, Release pull request,
+ * Release-please configuration, Conventional Commit pull request titles, Release app token, Release app's
+ * own tag). Run npm test.
  * The workflow is read as YAML; actionlint runs on it when it is on PATH (see test/tools.ts).
  */
 import { describe, expect, test } from 'vitest';
@@ -36,8 +38,10 @@ test('Release on the version merge: pushes to main and v* tags; a read-only dete
   expect(detect.permissions).toEqual({ contents: 'read' });
   expect(detect.outputs).toEqual({ release: '${{ steps.detect.outputs.release }}', tag: '${{ steps.detect.outputs.tag }}' });
   const step = detect.steps.find(candidate => candidate.run?.includes('scripts/release-detect.mjs'))!;
-  expect(step.run).toBe('node scripts/release-detect.mjs "$REF_TYPE" "$REF_NAME" "$BEFORE" "$GITHUB_SHA" "$FORCED" >> "$GITHUB_OUTPUT"');
-  expect(step.env).toEqual({ REF_TYPE: '${{ github.ref_type }}', REF_NAME: '${{ github.ref_name }}', BEFORE: '${{ github.event.before }}', FORCED: '${{ github.event.forced }}' });
+  expect(step.run).toBe('node scripts/release-detect.mjs "$REF_TYPE" "$REF_NAME" "$BEFORE" "$GITHUB_SHA" "$FORCED" "$ACTOR" >> "$GITHUB_OUTPUT"');
+  // Workflow wiring (Release app's own tag): the actor as the sixth argument, the app's bot login in env.
+  expect(step.env).toEqual({ REF_TYPE: '${{ github.ref_type }}', REF_NAME: '${{ github.ref_name }}', BEFORE: '${{ github.event.before }}',
+    FORCED: '${{ github.event.forced }}', ACTOR: '${{ github.actor }}', RELEASE_APP_BOT: 'brunosouzas-stackledger-release[bot]' });
   expect(detect.steps.find(candidate => candidate.uses?.startsWith('actions/checkout@'))?.with?.['fetch-depth']).toBe(0);
 });
 
@@ -109,7 +113,7 @@ test('Publishing job: after the checks, in environment npm, publishing the check
   expect(needs(publish)).toContain(checkName);
   const environment = typeof publish.environment === 'string' ? publish.environment : publish.environment?.name;
   expect(environment).toBe('npm');
-  expect(publish.permissions).toEqual({ contents: 'write', 'id-token': 'write' });
+  expect(publish.permissions).toEqual({ contents: 'read', 'id-token': 'write' });
   const checkout = publish.steps.find(step => step.uses?.startsWith('actions/checkout@'));
   expect(checkout?.with?.['persist-credentials']).toBe(false);
   const runs = publish.steps.filter(step => step.run !== undefined).map(step => step.run!);
@@ -120,6 +124,73 @@ test('Publishing job: after the checks, in environment npm, publishing the check
   // The bootstrap token is read from the environment's secret only; empty after the first version.
   const script = publish.steps.find(step => step.run?.includes('scripts/release-publish.sh'));
   expect(script?.env?.NODE_AUTH_TOKEN).toBe('${{ secrets.NPM_TOKEN }}');
+});
+
+describe('Release app token', () => {
+  const tokenIndex = publish.steps.findIndex(step => step.uses?.startsWith('actions/create-github-app-token@'));
+  const token = publish.steps[tokenIndex]!;
+
+  test('Contents only: this repository, permission-contents: write and nothing else, revoked by default', () => {
+    expect(tokenIndex).toBeGreaterThan(-1);
+    expect(token.id).toBe('app');
+    expect(token.with).toEqual({ 'client-id': '${{ vars.RELEASE_APP_CLIENT_ID }}', 'private-key': '${{ secrets.RELEASE_APP_PRIVATE_KEY }}',
+      repositories: '${{ github.event.repository.name }}', 'permission-contents': 'write' });
+  });
+
+  test('Token before publishing: after the checkout and the download, the only GH_TOKEN, never github.token', () => {
+    const checkout = publish.steps.findIndex(step => step.uses?.startsWith('actions/checkout@'));
+    const download = publish.steps.findIndex(step => step.uses?.startsWith('actions/download-artifact@'));
+    const script = publish.steps.findIndex(step => step.run?.includes('scripts/release-publish.sh'));
+    expect(checkout).toBeLessThan(tokenIndex);
+    expect(download).toBeLessThan(tokenIndex);
+    expect(tokenIndex).toBeLessThan(script);
+    expect(publish.steps[script]!.env?.GH_TOKEN).toBe('${{ steps.app.outputs.token }}');
+    expect(workflowText).not.toContain('github.token');
+  });
+});
+
+describe('Release pull request and titles', () => {
+  const read = (file: string) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
+  interface CallerJob { uses?: string; with?: Record<string, unknown>; secrets?: unknown; steps?: unknown }
+  const releasePr = parse(read('.github/workflows/release-please.yml')) as { on: unknown; permissions?: unknown; jobs: Record<string, CallerJob> };
+  const title = parse(read('.github/workflows/title.yml')) as { on: unknown; permissions?: unknown; jobs: Record<string, CallerJob> };
+
+  test('Caller: pushes to main, no permissions, the reusable workflow at v0.1.0, the key passed by name', () => {
+    expect(releasePr.on).toEqual({ push: { branches: ['main'] } });
+    expect(releasePr.permissions).toEqual({});
+    expect(Object.keys(releasePr.jobs)).toEqual(['release-please']);
+    const job = releasePr.jobs['release-please']!;
+    expect(job.uses).toBe('brunosouzas/github-reusable-workflows/.github/workflows/release-please.yml@v0.1.0');
+    expect(job.with).toEqual({ 'skip-github-release': true });
+    expect(job.secrets).toEqual({ RELEASE_APP_PRIVATE_KEY: '${{ secrets.RELEASE_APP_PRIVATE_KEY }}' });
+  });
+
+  test('Configuration: one node package, no component in the tag, minor bumps before 1.0, CHANGELOG.md', () => {
+    expect(JSON.parse(read('release-please-config.json')).packages).toEqual({
+      '.': { 'release-type': 'node', 'bump-minor-pre-major': true, 'include-component-in-tag': false, 'changelog-path': 'CHANGELOG.md',
+        'extra-files': [{ type: 'generic', path: 'README.md' }] },
+    });
+  });
+
+  test('Manifest out of step: the manifest holds the version in package.json', () => {
+    const manifest = JSON.parse(read('.release-please-manifest.json')) as Record<string, string>;
+    const { version } = JSON.parse(read('package.json')) as { version: string };
+    expect(Object.keys(manifest)).toEqual(['.']);
+    expect(manifest['.'], `manifest ${manifest['.']} vs package.json ${version}`).toBe(version);
+  });
+
+  test('Title workflow: pull request events only, no permissions, job pr-title at v0.1.0', () => {
+    expect(title.on).toEqual({ pull_request: { types: ['opened', 'edited', 'synchronize', 'reopened'] } });
+    expect(title.permissions).toEqual({});
+    expect(Object.keys(title.jobs)).toEqual(['pr-title']);
+    expect(title.jobs['pr-title']!.uses).toBe('brunosouzas/github-reusable-workflows/.github/workflows/pr-title.yml@v0.1.0');
+  });
+
+  test('Title workflow on another event: no push or pull_request_target trigger', () => {
+    const events = Object.keys(title.on as Record<string, unknown>);
+    expect(events).not.toContain('push');
+    expect(events).not.toContain('pull_request_target');
+  });
 });
 
 describe('Pinned', () => {
