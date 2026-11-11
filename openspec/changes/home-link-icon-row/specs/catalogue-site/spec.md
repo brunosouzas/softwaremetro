@@ -65,7 +65,11 @@ A home link with `icon` SHALL be an anchor holding no text, whose `aria-label` a
 ## ADDED Requirements
 
 ### Requirement: Home link icon row
-The icon links SHALL be shown side by side in one row that wraps when the page is narrow. Each icon SHALL be shown at 2rem (32 × 32 CSS pixels at the default text size), each anchor's target SHALL be at least 24 × 24 CSS pixels (WCAG 2.2, 2.5.8), the site's focus ring SHALL be visible around an anchor on keyboard focus, and the gap between two anchors SHALL be wider than two focus rings.
+The icon links SHALL be shown side by side in one row that wraps when the page is narrow. Each icon SHALL be shown at 2rem (32 × 32 CSS pixels at the default text size), each anchor's target SHALL be at least 24 × 24 CSS pixels (WCAG 2.2, 2.5.8), the site's focus ring SHALL be visible around an anchor on keyboard focus, and the gap between two anchors SHALL be wider than two focus rings. Each link icon SHALL stay a separate piece: an anchor SHALL hold only its own icon's light and dark files, and the row SHALL come from CSS over separate anchors, never from a combined image or sprite.
+
+#### Scenario: Each icon link holds only its own icon
+- **WHEN** the home lists the icon links `website`, `github` and `stackledger`
+- **THEN** each anchor holds exactly two images, `link-icons/<its icon>-light.svg` and `link-icons/<its icon>-dark.svg`, no anchor holds another link's icon, and the row is laid out by CSS from separate anchors, never from a combined image or sprite
 
 #### Scenario: Icons side by side
 - **WHEN** the home lists three icon links in a 1280-pixel-wide window
