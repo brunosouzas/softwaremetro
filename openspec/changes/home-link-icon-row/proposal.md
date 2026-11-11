@@ -40,9 +40,9 @@ None.
 - Security: no new URL or attribute takes catalogue data except `aria-label` and `title`, escaped by Astro like every catalogue text (site-security "Escaped catalogue text", unchanged); the URL scan and the CSP do not change; the new icon files are static and checked inert ("Site art is inert").
 - Logs and observability: n/a, no new message.
 
-## Open questions
+## Decisions
 
-- If design system 0.11.0 is not published when the row is ready, should the row ship alone in stackledger 0.10.0 and `brunosouzas` follow in a later change? Recommended: no, ship them together in 0.10.0 after design system 0.11.0. If the owner chooses to split, these move to the follow-up: task 2 (the pin, the two art files, `HOME_LINK_ICONS`, the packed files); catalogue-site / Home link icons / "Link with the brunosouzas icon"; the `BrunoSouzas` case of catalogue / Home link icon setting / "Unknown link icon"; the twelve-file count of "Link icon files are the design system's" (back to ten); the sixth name `brunosouzas` in the catalogue requirement, in `links[3]` of "Link icon" and in "Icon names match the design system" (back to five); the six names in task 3.1 (back to five); and the PR title in task 4.1 (without "brunosouzas icon, design system 0.11.0"). In either case "Description beside an icon" and the sentence "A link MAY have both `icon` and `description`" stay in this change.
+- The row and the `brunosouzas` icon ship together in stackledger 0.10.0, after `@brunosouzas/design-system` 0.11.0 is published (owner, 2026-11-11, q45 A). The row (task 1) is built first; the pull request is opened only once task 2 is done.
 
 ## Impact
 
