@@ -1,0 +1,26 @@
+# Tasks: home links as a row of icons
+
+Levels: unit and integration are vitest (`npm test`, after `npm run build`), e2e is Playwright (`npm run test:browser`). A scenario is written as capability / requirement / scenario. The page HTML is checked where the repository already checks it: in the built pages of `test/integration/site.test.ts` (the "unit tests for the HTML" of the request; there is no Astro component renderer in the tests).
+
+Tasks 1 and 3 to 5 do not wait for the design system; task 2 waits for `@brunosouzas/design-system` 0.11.0 on npm (`npm view @brunosouzas/design-system version`).
+
+## 1. Row on the home
+
+- [ ] 1.1 In `site/src/pages/index.astro`, split `site.home.links` into icon links and text links, each in the given order: `ul.home-icon-links` (anchor with `aria-label` and `title` = title, `rel="noopener noreferrer"`, the two themed `img` at 32 × 32, no text, no description) then `ul.home-external` (unchanged, without the icon branch); a list without items is not written. Proves catalogue-site / Home links / "Two links" (unchanged), "Icon row before text links", "Only icon links", "Hostile link text", "Broken settings, no links", "Icon with broken settings"; Home link icons / "Link with an icon", "Link with the stackledger icon", "Hostile icon title" (`test/integration/site.test.ts`, integration: `ICON_SETTINGS` gains `description: Our code` on `Source`; a new icon-only settings build; the hostile settings gain an icon link with the title `"><script>alert(1)</script>`; the count of icon `img` per site becomes 2 × the number of icon links).
+- [ ] 1.2 In `site/src/styles/pages.css`, replace `.link-icon` by the row rules of the design (row flex with `gap: 0.75rem`, anchor `inline-flex`, `padding: 0.25rem`, `border-radius: var(--radius)`, icon `2rem`). Proves catalogue-site / Home link icon row / "Icons side by side", "Focus ring on an icon link", "Narrow row"; Home link icons / "Accessible name of an icon link", "Link icon follows the theme" (`test/browser/site.spec.ts`, e2e, on `/extra/`: `test/browser/serve.mjs` lists three icon links, `Source` github, `Catalogue` stackledger and `Profile` linkedin; the theme test expects the three icons of the scheme; focus by `page.keyboard.press('Tab')` until the first icon link, then its computed `outline`; `page.setViewportSize({ width: 320, … })` for the narrow row).
+- [ ] 1.3 The CSP, URL scan and inert-art tests stay green unchanged: site-security / No external requests / "Home links are the only external URLs", catalogue-site / Home links / "Site art is inert" (`test/integration/site.test.ts`, `test/unit/site-brand.test.ts`). catalogue / Home link icon setting / "Description beside an icon" holds already and gets its test now (`test/unit/settings.test.ts`, unit: `icon: github` with `description`, no error and no warning).
+
+## 2. The `brunosouzas` icon (waits for design system 0.11.0)
+
+- [ ] 2.1 Read the design system's 0.11.0 changelog. If it changes tokens or any piece stackledger draws, stop and ask Bruno before going on. Otherwise pin it with `npm install @brunosouzas/design-system@0.11.0 --save-exact`; the diff of `package.json` and `npm-shrinkwrap.json` touches only that package. Verified by the full `npm test` and `npm run test:browser` with no recorded output re-recorded (`test/fixtures/map-0.8.1`, `docs/images/map-*.svg`).
+- [ ] 2.2 `npm run build && node scripts/site-art.mjs` adds `site/public/link-icons/brunosouzas-light.svg` and `brunosouzas-dark.svg` and leaves every other art file unchanged (`git status`). Proves catalogue-site / Home link icons / "Link icon files are the design system's" (twelve files) and Home links / "Site art is inert" (`test/unit/site-brand.test.ts`, unit).
+- [ ] 2.3 Add `brunosouzas` to `HOME_LINK_ICONS` in `src/schema.ts`. Proves catalogue / Home link icon setting / "Link icon", "Unknown link icon" (`icon: BrunoSouzas`) (`test/unit/settings.test.ts`, unit), "Icon names match the design system" (`test/unit/site-brand.test.ts`, unit, the equality test kept).
+- [ ] 2.4 `ICON_SETTINGS` gains `Bruno Souza` (`https://www.example.com/`, `icon: brunosouzas`). Proves catalogue-site / Home link icons / "Link with the brunosouzas icon" (`test/integration/site.test.ts`, integration); the packed files hold the two new files (`test/integration/package.test.ts`, "Packed files", integration).
+
+## 3. Documentation
+
+- [ ] 3.1 `docs/catalogue-format.md`, `spec.site.home.links`: six icon names; a link with `icon` is shown as an icon in a row before the other links, named by its title; "`description` is not shown when `icon` is set". `docs/site.md`: the Home row of the pages table and "Marks and art" (icon links as a row of icons, no title text). `docs/roadmap.md`: a row for `home-link-icon-row`, and the `stackledger-link-icon` row marked released in 0.9.0. Verified by the review and the docs tests in `npm test`.
+
+## 4. Release
+
+- [ ] 4.1 Open the pull request titled `feat: home links as a row of icons, brunosouzas icon, design system 0.11.0 (AB#326)` (the `Title` check); do not set the version. After the merge, release-please's release pull request proposes 0.10.0; Bruno merges it and approves the `npm` environment (`docs/release.md`). Verified by `npm view @brunosouzas/stackledger version` printing `0.10.0`.
