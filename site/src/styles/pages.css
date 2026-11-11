@@ -294,11 +294,28 @@
   margin-top: 2rem;
 }
 
-.link-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  margin-right: 0.5rem;
-  vertical-align: middle;
+/* Home link icon row: icon-only anchors side by side, wrapping on a narrow page. The gap is wider
+   than two focus rings (3px outline, 2px offset each side), so two rings never touch; the 12px floor
+   holds under 768px, where the root text is smaller and 0.75rem is under 10px. */
+.home-icon-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: max(0.75rem, 12px);
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.home-icon-links a {
+  display: inline-flex;
+  padding: 0.25rem;
+  border-radius: var(--radius);
+}
+
+/* Sized only: a display here would outrank .themed-dark { display: none } (base.css) and show both. */
+.home-icon-links img {
+  width: 2rem;
+  height: 2rem;
 }
 
 .home-cards {

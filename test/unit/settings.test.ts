@@ -63,6 +63,10 @@ test('Too many links', () => {
 test('Link icon', () => {
   expect(check(site({ home: { links: [link({ icon: 'github' }), link({ icon: 'website' }), link({ icon: 'stackledger' })] } })).problems).toEqual([]);
 });
+// catalogue "Home link icon setting": a description beside an icon is accepted (not shown on the site).
+test('Description beside an icon', () => {
+  expect(check(site({ home: { links: [link({ icon: 'github', description: 'Our code' })] } })).problems).toEqual([]);
+});
 test('Unknown link icon', () => {
   for (const icon of ['twitter', 'GitHub', '../favicon', 'Stackledger', 'stackledger-dark']) {
     expect(errors(site({ home: { links: [link({ icon })] } })), icon).toMatchObject([{ field: 'spec.site.home.links[0].icon' }]);

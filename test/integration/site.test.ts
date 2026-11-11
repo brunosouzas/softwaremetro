@@ -62,9 +62,12 @@ const brokenCatalogue = {
 
 const hostileComponent = '<img src=x onerror=alert(1)>';
 const hostileLine = '</script><script>alert(1)</script>';
+// catalogue-site, Home link icons, "Hostile icon title": a title that closes the attribute and opens a script.
+const HOSTILE_ICON = '"><script>alert(1)</script>';
 const hostileCatalogue = {
   'catalogue.yaml': yaml(set(component('editor'), 'metadata.title', hostileComponent), component('forge'),
     set(stops('ship', ['editor', 'forge']), 'metadata.title', hostileLine)),
+  'stackledger.yaml': settingsFile({ site: { home: { links: [{ title: HOSTILE_ICON, url: 'https://github.example.com/hostile/', icon: 'github' }] } } }),
 };
 
 // catalogue-site, Home page and Home links: the example with home text and links, and a catalogue with nothing in it.
@@ -78,12 +81,22 @@ const HOME_SETTINGS = `  site:
         - { title: Team wiki, url: "http://wiki.example.org/" }
         - { title: "${HOSTILE_LINK}", url: "https://example.org/?a=1&b=2" }
 `;
-// catalogue-site "Home links": links with an icon (github, stackledger) and one without.
+// catalogue-site "Home links" and "Home link icons": icon links (github twice, stackledger) around one
+// text link; the description of an icon link is not shown.
 const ICON_SETTINGS = `  site:
     home:
       links:
+        - { title: Source, url: "https://github.example.com/northwind/", icon: github, description: Our code }
+        - { title: Blog, url: "https://blog.example.com/", description: Posts }
+        - { title: Catalogue, url: "https://catalogue.example.com/", icon: stackledger }
+        - { title: Mirror, url: "https://github.example.com/mirror/", icon: github }
+`;
+// catalogue-site "Only icon links" and "Each icon link holds only its own icon": every link has an icon.
+const ICON_ONLY_SETTINGS = `  site:
+    home:
+      links:
+        - { title: Site, url: "https://www.example.com/", icon: website }
         - { title: Source, url: "https://github.example.com/northwind/", icon: github }
-        - { title: Blog, url: "https://blog.example.com/" }
         - { title: Catalogue, url: "https://catalogue.example.com/", icon: stackledger }
 `;
 const CITY_SETTINGS = '  map:\n    backdrop: london\n';
@@ -99,11 +112,11 @@ const svgCatalogue = {
 // catalogue-site "Diagram box titles": a title of spaces is valid in the catalogue.
 const blankCatalogue = { 'catalogue.yaml': yaml(set(depends(component('forge'), ['component:vault']), 'metadata.title', ' '), component('vault'), depends(component('editor'), ['component:forge'])) };
 
-let main: Built, other: Built, customA: Built, customB: Built, broken: Built, hostile: Built, example: Built, linked: Built, empty: Built, blank: Built, iconed: Built, svgHostile: Built, city: Built;
+let main: Built, other: Built, customA: Built, customB: Built, broken: Built, hostile: Built, example: Built, linked: Built, empty: Built, blank: Built, iconed: Built, svgHostile: Built, city: Built, iconOnly: Built;
 
 beforeAll(async () => {
   const exampleFiles = Object.fromEntries(['catalog-info.yaml', 'stackledger.yaml'].map(file => [file, read(join(root, 'examples/northwind'), file)]));
-  [main, other, customA, customB, broken, hostile, example, linked, empty, blank, iconed, svgHostile, city] = await Promise.all([
+  [main, other, customA, customB, broken, hostile, example, linked, empty, blank, iconed, svgHostile, city, iconOnly] = await Promise.all([
     buildSites(mainCatalogue(DEFAULT_HIDDEN), '2027-06-01'),
     buildSites(mainCatalogue(OTHER_HIDDEN), '2031-01-01'),
     buildSites(customHidden('Northwind Studio', 'to-confirm'), '2027-06-01'),
@@ -117,13 +130,16 @@ beforeAll(async () => {
     buildSites({ ...exampleFiles, 'stackledger.yaml': exampleFiles['stackledger.yaml']! + ICON_SETTINGS }),
     buildSites(svgCatalogue),
     buildSites({ ...exampleFiles, 'stackledger.yaml': exampleFiles['stackledger.yaml']! + HOME_SETTINGS + CITY_SETTINGS }),
+    buildSites({ ...exampleFiles, 'stackledger.yaml': exampleFiles['stackledger.yaml']! + ICON_ONLY_SETTINGS }),
   ]);
 }, 180_000);
 
-// Removing twelve built sites can take more than the default 10 s while other test files run.
+// Removing fourteen built sites can take more than the default 10 s while other test files run.
 afterAll(cleanup, 60_000);
 
-const tagsOf = (html: string) => [...html.matchAll(/<([A-Za-z][A-Za-z0-9:-]*)((?:\s[^<>]*?)?)\/?>/g)].map(match => ({ name: match[1]!.toLowerCase(), attrs: match[2] ?? '' }));
+// A tag's attributes may hold < and > inside quotes (Astro escapes only " and & in a quoted value, as
+// HTML allows), so a quoted value is read whole, as a browser does.
+const tagsOf = (html: string) => [...html.matchAll(/<([A-Za-z][A-Za-z0-9:-]*)((?:\s(?:"[^"]*"|'[^']*'|[^<>"'])*?)?)\/?>/g)].map(match => ({ name: match[1]!.toLowerCase(), attrs: match[2] ?? '' }));
 const attrsOf = (text: string) => [...text.matchAll(/([^\s"'<>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g)].map(match => ({ name: match[1]!.toLowerCase(), value: match[2] ?? match[3] ?? match[4] ?? '' }));
 const decode = (value: string) => value.replaceAll('&#39;', "'").replaceAll('&quot;', '"').replaceAll('&amp;', '&');
 
@@ -195,7 +211,8 @@ test('No other images', () => {
         if (src.endsWith('home-banner.svg')) expect(page).toBe('index.html');
       }
     }
-    expect(icons).toBe(4);
+    // Two img (light and dark) per icon link: Source, Catalogue and Mirror.
+    expect(icons).toBe(2 * 3);
   }
 });
 
@@ -475,27 +492,120 @@ test('Banner on the home', () => {
   }
 });
 
-test('Link with an icon', () => {
+/** Decode the character references Astro writes in attribute values. */
+const decodeAll = (value: string) => value.replaceAll('&quot;', '"').replaceAll('&#34;', '"').replaceAll('&#39;', "'")
+  .replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
+
+interface IconAnchor { attrs: Record<string, string>; text: string; images: Record<string, string>[] }
+
+/** The anchors of a home's icon row (ul.home-icon-links), in order; undefined without a row. */
+function iconRow(html: string): IconAnchor[] | undefined {
+  const row = /<ul class="home-icon-links" role="list">([\s\S]*?)<\/ul>/.exec(homeMain(html))?.[1];
+  if (row === undefined) return undefined;
+  const attributes = (text: string) => Object.fromEntries(attrsOf(text).map(attr => [attr.name, decodeAll(attr.value)]));
+  return [...row.matchAll(/<a\b((?:"[^"]*"|[^>"])*)>([\s\S]*?)<\/a>/g)].map(match => ({
+    attrs: attributes(match[1]!),
+    text: match[2]!.replace(/<[^>]*>/g, ''),
+    images: tagsOf(match[2]!).filter(tag => tag.name === 'img').map(tag => attributes(tag.attrs)),
+  }));
+}
+
+/** The two img of an icon link: light then dark, decorative, 32 x 32. */
+const iconImages = (icon: string) => (['light', 'dark'] as const).map(surface =>
+  ({ class: `themed-${surface}`, src: `link-icons/${icon}-${surface}.svg`, alt: '', width: '32', height: '32' }));
+
+test('Icon row before text links', () => {
   for (const site of [iconed.full, iconed.staff]) {
     const html = homeMain(read(site, 'index.html'));
-    const anchor = (title: string) => new RegExp(`<a href="[^"]*" rel="noopener noreferrer">((?:<img [^>]*>)*)${title}</a>`).exec(html)![1]!;
-    expect(anchor('Source')).toBe('<img class="link-icon themed-light" src="link-icons/github-light.svg" alt="" width="24" height="24"><img class="link-icon themed-dark" src="link-icons/github-dark.svg" alt="" width="24" height="24">');
-    expect(anchor('Blog')).toBe('');
+    const heading = html.indexOf('<h2>Links</h2>');
+    expect(heading).toBeGreaterThan(-1);
+    expect(html.indexOf('<ul class="home-icon-links"')).toBeGreaterThan(heading);
+    expect(html.indexOf('<ul class="home-external">')).toBeGreaterThan(html.indexOf('<ul class="home-icon-links"'));
+    expect(iconRow(html)!.map(anchor => anchor.attrs['aria-label'])).toEqual(['Source', 'Catalogue', 'Mirror']);
+    const list = /<ul class="home-external">([\s\S]*?)<\/ul>/.exec(html)![1]!;
+    expect([...list.matchAll(/<a\b[^>]*>([^<]*)<\/a>/g)].map(match => match[1])).toEqual(['Blog']);
+    expect(list).toMatch(/>Blog<\/a>\s*<span class="muted"> · Posts<\/span>/);
+    // Every anchor of both groups: its link's url, rel="noopener noreferrer", no target.
+    const anchors = [...html.matchAll(/<a\b([^>]*)>/g)].map(match => Object.fromEntries(attrsOf(match[1]!).map(attr => [attr.name, decodeAll(attr.value)])))
+      .filter(attrs => /^https?:/.test(attrs.href ?? ''));
+    expect(anchors.map(attrs => attrs.href)).toEqual(['https://github.example.com/northwind/', 'https://catalogue.example.com/', 'https://github.example.com/mirror/', 'https://blog.example.com/']);
+    for (const attrs of anchors) { expect(attrs.rel).toBe('noopener noreferrer'); expect(attrs).not.toHaveProperty('target'); }
+  }
+});
+
+test('Only icon links', () => {
+  for (const site of [iconOnly.full, iconOnly.staff]) {
+    const html = homeMain(read(site, 'index.html'));
+    expect(html).toContain('<h2>Links</h2>');
+    expect(iconRow(html)!.map(anchor => anchor.attrs['aria-label'])).toEqual(['Site', 'Source', 'Catalogue']);
+    expect(html).not.toContain('home-external');
+  }
+  // And a home with text links only has no row.
+  for (const site of [linked.full, linked.staff]) expect(homeMain(read(site, 'index.html'))).not.toContain('home-icon-links');
+});
+
+test('Link with an icon', () => {
+  for (const site of [iconed.full, iconed.staff]) {
+    const html = read(site, 'index.html');
+    const source = iconRow(html)!.find(anchor => anchor.attrs['aria-label'] === 'Source')!;
+    expect(source.attrs).toEqual({ href: 'https://github.example.com/northwind/', rel: 'noopener noreferrer', 'aria-label': 'Source', title: 'Source' });
+    expect(source.text.trim()).toBe('');
+    expect(source.images).toEqual(iconImages('github'));
+    expect(html).not.toContain('Our code');
+    const blog = /<a href="https:\/\/blog\.example\.com\/" rel="noopener noreferrer">([\s\S]*?)<\/a>/.exec(homeMain(html))![1]!;
+    expect(blog).toBe('Blog');
     for (const file of ['github-light.svg', 'github-dark.svg']) expect(existsSync(join(site, 'link-icons', file))).toBe(true);
+  }
+});
+
+test('Each icon link holds only its own icon', () => {
+  const icons: Record<string, string> = { Site: 'website', Source: 'github', Catalogue: 'stackledger', Mirror: 'github' };
+  for (const site of [iconed.full, iconed.staff, iconOnly.full, iconOnly.staff]) {
+    const row = iconRow(read(site, 'index.html'))!;
+    expect(row.length).toBeGreaterThan(0);
+    for (const anchor of row) expect(anchor.images, anchor.attrs['aria-label']).toEqual(iconImages(icons[anchor.attrs['aria-label']!]!));
+  }
+});
+
+test('Same icon twice', () => {
+  for (const site of [iconed.full, iconed.staff]) {
+    const github = iconRow(read(site, 'index.html'))!.filter(anchor => anchor.images.some(image => image.src!.includes('github')));
+    expect(github.map(anchor => [anchor.attrs.href, anchor.attrs['aria-label'], anchor.attrs.title])).toEqual([
+      ['https://github.example.com/northwind/', 'Source', 'Source'],
+      ['https://github.example.com/mirror/', 'Mirror', 'Mirror'],
+    ]);
+    for (const anchor of github) expect(anchor.images).toEqual(iconImages('github'));
   }
 });
 
 test('Link with the stackledger icon', () => {
   for (const site of [iconed.full, iconed.staff]) {
-    const html = homeMain(read(site, 'index.html'));
-    const anchor = /<a href="https:\/\/catalogue\.example\.com\/" rel="noopener noreferrer">((?:<img [^>]*>)*)Catalogue<\/a>/.exec(html)![1]!;
-    expect(anchor).toBe('<img class="link-icon themed-light" src="link-icons/stackledger-light.svg" alt="" width="24" height="24"><img class="link-icon themed-dark" src="link-icons/stackledger-dark.svg" alt="" width="24" height="24">');
+    const catalogue = iconRow(read(site, 'index.html'))!.find(anchor => anchor.attrs.href === 'https://catalogue.example.com/')!;
+    expect([catalogue.attrs['aria-label'], catalogue.attrs.title]).toEqual(['Catalogue', 'Catalogue']);
+    expect(catalogue.images).toEqual(iconImages('stackledger'));
     for (const file of ['stackledger-light.svg', 'stackledger-dark.svg']) expect(existsSync(join(site, 'link-icons', file))).toBe(true);
   }
 });
 
+test('Hostile icon title', () => {
+  for (const site of [hostile.full, hostile.staff]) {
+    const html = read(site, 'index.html');
+    const [anchor] = iconRow(html)!;
+    expect([anchor!.attrs['aria-label'], anchor!.attrs.title]).toEqual([HOSTILE_ICON, HOSTILE_ICON]);
+    // The quote is escaped, so the value cannot close its attribute; < and > stay text inside it.
+    expect(html).toContain('aria-label="&quot;><script>alert(1)</script>" title="&quot;><script>alert(1)</script>"');
+    expect(html).not.toContain(HOSTILE_ICON);
+    // No script element from it: every script of the page is the site's own module.
+    for (const tag of tagsOf(html).filter(tag => tag.name === 'script')) expect(tag.attrs).toMatch(/^ type="module" src="_astro\/[^"]+\.js"$/);
+  }
+});
+
 test('Icon with broken settings', () => {
-  for (const site of [broken.full, broken.staff]) expect(homeMain(read(site, 'index.html'))).not.toContain('link-icon');
+  for (const site of [broken.full, broken.staff]) {
+    const html = homeMain(read(site, 'index.html'));
+    expect(html).not.toContain('link-icons/');
+    expect(html).not.toContain('home-icon-links');
+  }
 });
 
 test('Broken settings, no links', () => {

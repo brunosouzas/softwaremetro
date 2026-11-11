@@ -24,7 +24,7 @@ The design system has no spacing tokens and `tokens.css` only `--radius`; `pages
 - icon `2rem` (32 px at the default size), up from 1.5rem: alone, without a title, the 46-unit sticker must be recognisable, and 2rem is the next step of the scale used for the header marks (28) and the old icons (24);
 - anchor `display: inline-flex` with `padding: 0.25rem` and `border-radius: var(--radius)`: a 40 × 40 target (WCAG 2.2 2.5.8 asks 24 × 24), and the focus ring follows the rounded corner;
 - the `img` is sized only (`width`, `height`), never given a `display`: `.home-icon-links img { display: block }` would outrank `.themed-dark { display: none }` (`base.css`) and show both icons. Inside the `inline-flex` anchor the shown `img` is a flex item, so its computed `display` is `block` (the theme test expected `inline` before);
-- row `display: flex; flex-wrap: wrap; gap: 0.75rem`, no bullets, no indent: 12 px between targets, across and between lines, more than the two rings of the site's `:focus-visible` (3 px outline, 2 px offset, so 5 px each side), so two rings never touch.
+- row `display: flex; flex-wrap: wrap; gap: max(0.75rem, 12px)`, no bullets, no indent: 12 px between targets, across and between lines, more than the two rings of the site's `:focus-visible` (3 px outline, 2 px offset, so 5 px each side), so two rings never touch. The 12 px floor is there because the root text is smaller under 768 px (`--text-base-sm`, `base.css`), where `0.75rem` alone is 9.6 px, less than the two rings; the rings are in pixels, so the gap's floor is too.
 
 The focus ring is the site's own `:focus-visible` rule; no new focus style. The `.link-icon` rule for icons before a title goes, since a text link no longer has an icon.
 

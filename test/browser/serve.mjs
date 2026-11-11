@@ -34,9 +34,16 @@ write(join(extra, 'catalogue', 'catalog-info.yaml'), [
   doc('Line', 'work', '  color: "#0072CE"\n  stops: ["component:wiki", "component:chat", "component:ledger"]\n'),
   doc('MapLayout', 'layout', '  stations:\n    "component:wiki": [0, 0]\n    "component:chat": [2, 0]\n    "component:ledger": [4, 0]\n  zones:\n    - { name: Team tools, title: Team tools, color: "#F5A623" }\n'),
 ].join('---\n'));
-// A home link with an icon (catalogue-site, Home links), the london backdrop (catalogue-site, Map backdrop)
-// and a title of 60 characters, the longest allowed (catalogue-site, Wordmark with the longest title).
-write(join(extra, 'catalogue', 'stackledger.yaml'), doc('Settings', 'settings', '  site:\n    title: "Northwind Studio software and licences for the design teams."\n    home:\n      links:\n        - { title: Source, url: "https://github.example.com/northwind/", icon: github }\n  map:\n    backdrop: london\n'));
+// Eight icon links, so that 320 pixels forces a second line (catalogue-site, Home link icon row), the
+// london backdrop (catalogue-site, Map backdrop) and a title of 60 characters, the longest allowed
+// (catalogue-site, Wordmark with the longest title).
+const iconLinks = [
+  ['Source', 'https://github.example.com/northwind/', 'github'], ['Catalogue', 'https://catalogue.example.com/', 'stackledger'],
+  ['Profile', 'https://linkedin.example.com/in/northwind/', 'linkedin'], ['Site', 'https://www.example.com/', 'website'],
+  ['Mail', 'https://www.example.com/contact/', 'email'], ['Mirror', 'https://github.example.com/mirror/', 'github'],
+  ['Docs', 'https://docs.example.com/', 'website'], ['Network', 'https://linkedin.example.com/company/northwind/', 'linkedin'],
+].map(([title, url, icon]) => `        - { title: ${title}, url: "${url}", icon: ${icon} }\n`).join('');
+write(join(extra, 'catalogue', 'stackledger.yaml'), doc('Settings', 'settings', '  site:\n    title: "Northwind Studio software and licences for the design teams."\n    home:\n      links:\n' + iconLinks + '  map:\n    backdrop: london\n'));
 write(join(extra, 'kit', 'notes', 'SKILL.md'), '---\nname: notes\ndescription: Takes Northwind notes.\n---\n');
 write(join(extra, 'kit', 'summary', 'SKILL.md'), '---\nname: summary\ndescription: Summarises Northwind notes.\n---\n');
 write(join(extra, 'kit', 'stackledger-skills.yaml'), doc('Line', 'notes', '  color: "#E4002B"\n  stops: ["skill:notes", "skill:summary"]\n'));
