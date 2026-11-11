@@ -61,10 +61,10 @@ test('Too many links', () => {
 });
 // catalogue "Home settings": an optional icon on a link, one of the design system's link icon names.
 test('Link icon', () => {
-  expect(check(site({ home: { links: [link({ icon: 'github' }), link({ icon: 'website' })] } })).problems).toEqual([]);
+  expect(check(site({ home: { links: [link({ icon: 'github' }), link({ icon: 'website' }), link({ icon: 'stackledger' })] } })).problems).toEqual([]);
 });
 test('Unknown link icon', () => {
-  for (const icon of ['twitter', 'GitHub', '../favicon']) {
+  for (const icon of ['twitter', 'GitHub', '../favicon', 'Stackledger']) {
     expect(errors(site({ home: { links: [link({ icon })] } })), icon).toMatchObject([{ field: 'spec.site.home.links[0].icon' }]);
   }
 });
