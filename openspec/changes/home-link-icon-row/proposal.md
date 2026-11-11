@@ -6,7 +6,7 @@ On the home page every link is a list item with its title as text and its descri
 
 ## What changes
 
-- **Icon links become a row.** The links with `icon` are shown side by side as icon-only anchors, before the other links, each group in the order given. Each anchor's accessible name (`aria-label`) and tooltip (`title`) are the link's title; it holds no text, and the link's description is not shown. The icons are 32 CSS pixels (2rem), up from 24, with a target of at least 24 × 24 CSS pixels (WCAG 2.2, 2.5.8), the site's focus ring visible on keyboard focus and a gap wide enough that two rings never overlap. The light and dark icons follow the theme as today.
+- **Icon links become a row.** The links with `icon` are shown side by side as icon-only anchors, before the other links, each group in the order given. Each anchor's accessible name (`aria-label`) is the link's title, with no tooltip (`title`) and no accessible description; it holds no text, and the link's description is not shown. The icons are 32 CSS pixels (2rem), up from 24, with a target of at least 24 × 24 CSS pixels (WCAG 2.2, 2.5.8), the site's focus ring visible on keyboard focus and a gap wide enough that two rings never overlap. The light and dark icons follow the theme as today.
 - **Text links stay as they are.** A link without `icon` keeps its list item with its title and, when set, its description.
 - **No new rule in `validate`.** `description` stays an optional field of any link; on a link with `icon` it is accepted, without a warning, and documented as not shown.
 - **The `brunosouzas` icon.** `HOME_LINK_ICONS` gains `brunosouzas`, with `@brunosouzas/design-system` pinned exactly to `0.11.0` and `scripts/site-art.mjs` writing `link-icons/brunosouzas-light.svg` and `brunosouzas-dark.svg`. The test that the schema's names equal the package's `LINK_ICON_NAMES` stays. This part waits for the design system's 0.11.0 release.
@@ -28,16 +28,16 @@ None.
 
 ### Modified Capabilities
 
-- `catalogue-site`: "Home links" orders the icon row before the text links and makes every item of both groups an anchor to its `url`; "Home link icons" makes an icon link icon-only, named and titled by its title, without description, holding only its own icon's two files, the row laid out by CSS over separate anchors (no combined image, sprite or `background-image`, two links with the same icon still two anchors), and ships twelve icon files; the new "Home link icon row" sets the list role (`role="list"`), size, target, focus ring, spacing and wrapping.
+- `catalogue-site`: "Home links" orders the icon row before the text links and makes every item of both groups an anchor to its `url`; "Home link icons" makes an icon link icon-only, named by its title (`aria-label`, no `title`), without description, holding only its own icon's two files, the row laid out by CSS over separate anchors (no combined image, sprite or `background-image`, two links with the same icon still two anchors), and ships twelve icon files; the new "Home link icon row" sets the list role (`role="list"`), size, target, focus ring, spacing and wrapping.
 - `catalogue`: "Home link icon setting" names six icons, with `brunosouzas`, and accepts `description` beside `icon`.
 
 ## Implicit requirements
 
-- Errors and invalid input: unchanged rules; an unknown icon stays an error on its path (`BrunoSouzas` and `brunosouzas-dark` included); `description` with `icon` is no problem and no warning. A title with HTML in it is written escaped in `aria-label` and `title` ("Hostile icon title").
+- Errors and invalid input: unchanged rules; an unknown icon stays an error on its path (`BrunoSouzas` and `brunosouzas-dark` included); `description` with `icon` is no problem and no warning. A title with HTML in it is written escaped in `aria-label` ("Hostile icon title").
 - Limits: at most 20 links as today; the row wraps on a narrow screen and keeps every target at least 24 × 24 CSS pixels ("Narrow row").
 - Repetition and idempotency: `scripts/site-art.mjs` writes the same bytes on every run, as today; the build is deterministic.
 - Concurrency: n/a, a static page.
-- Security: no new URL or attribute takes catalogue data except `aria-label` and `title`, escaped by Astro like every catalogue text (site-security "Escaped catalogue text", unchanged); the URL scan and the CSP do not change; the new icon files are static and checked inert ("Site art is inert").
+- Security: no new URL or attribute takes catalogue data except `aria-label`, escaped by Astro like every catalogue text (site-security "Escaped catalogue text", unchanged); the URL scan and the CSP do not change; the new icon files are static and checked inert ("Site art is inert").
 - Logs and observability: n/a, no new message.
 
 ## Decisions

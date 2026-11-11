@@ -548,7 +548,7 @@ test('Link with an icon', () => {
   for (const site of [iconed.full, iconed.staff]) {
     const html = read(site, 'index.html');
     const source = iconRow(html)!.find(anchor => anchor.attrs['aria-label'] === 'Source')!;
-    expect(source.attrs).toEqual({ href: 'https://github.example.com/northwind/', rel: 'noopener noreferrer', 'aria-label': 'Source', title: 'Source' });
+    expect(source.attrs).toEqual({ href: 'https://github.example.com/northwind/', rel: 'noopener noreferrer', 'aria-label': 'Source' });
     expect(source.text.trim()).toBe('');
     expect(source.images).toEqual(iconImages('github'));
     expect(html).not.toContain('Our code');
@@ -571,8 +571,8 @@ test('Same icon twice', () => {
   for (const site of [iconed.full, iconed.staff]) {
     const github = iconRow(read(site, 'index.html'))!.filter(anchor => anchor.images.some(image => image.src!.includes('github')));
     expect(github.map(anchor => [anchor.attrs.href, anchor.attrs['aria-label'], anchor.attrs.title])).toEqual([
-      ['https://github.example.com/northwind/', 'Source', 'Source'],
-      ['https://github.example.com/mirror/', 'Mirror', 'Mirror'],
+      ['https://github.example.com/northwind/', 'Source', undefined],
+      ['https://github.example.com/mirror/', 'Mirror', undefined],
     ]);
     for (const anchor of github) expect(anchor.images).toEqual(iconImages('github'));
   }
@@ -581,7 +581,7 @@ test('Same icon twice', () => {
 test('Link with the stackledger icon', () => {
   for (const site of [iconed.full, iconed.staff]) {
     const catalogue = iconRow(read(site, 'index.html'))!.find(anchor => anchor.attrs.href === 'https://catalogue.example.com/')!;
-    expect([catalogue.attrs['aria-label'], catalogue.attrs.title]).toEqual(['Catalogue', 'Catalogue']);
+    expect([catalogue.attrs['aria-label'], catalogue.attrs.title]).toEqual(['Catalogue', undefined]);
     expect(catalogue.images).toEqual(iconImages('stackledger'));
     for (const file of ['stackledger-light.svg', 'stackledger-dark.svg']) expect(existsSync(join(site, 'link-icons', file))).toBe(true);
   }
@@ -591,9 +591,9 @@ test('Hostile icon title', () => {
   for (const site of [hostile.full, hostile.staff]) {
     const html = read(site, 'index.html');
     const [anchor] = iconRow(html)!;
-    expect([anchor!.attrs['aria-label'], anchor!.attrs.title]).toEqual([HOSTILE_ICON, HOSTILE_ICON]);
+    expect([anchor!.attrs['aria-label'], anchor!.attrs.title]).toEqual([HOSTILE_ICON, undefined]);
     // The quote is escaped, so the value cannot close its attribute; < and > stay text inside it.
-    expect(html).toContain('aria-label="&quot;><script>alert(1)</script>" title="&quot;><script>alert(1)</script>"');
+    expect(html).toContain('aria-label="&quot;><script>alert(1)</script>">');
     expect(html).not.toContain(HOSTILE_ICON);
     // No script element from it: every script of the page is the site's own module.
     for (const tag of tagsOf(html).filter(tag => tag.name === 'script')) expect(tag.attrs).toMatch(/^ type="module" src="_astro\/[^"]+\.js"$/);

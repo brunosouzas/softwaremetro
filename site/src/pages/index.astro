@@ -66,7 +66,7 @@ const textLinks = links.filter(link => !link.icon);
             <ul class="home-icon-links" role="list">
               {iconLinks.map(link => (
                 <li>
-                  <a href={link.url} rel="noopener noreferrer" aria-label={link.title} title={link.title}><img class="themed-light" src={href(root, `link-icons/${link.icon}-light.svg`)} alt="" width="32" height="32" /><img class="themed-dark" src={href(root, `link-icons/${link.icon}-dark.svg`)} alt="" width="32" height="32" /></a>
+                  <a href={link.url} rel="noopener noreferrer" aria-label={link.title}><img class="themed-light" src={href(root, `link-icons/${link.icon}-light.svg`)} alt="" width="32" height="32" /><img class="themed-dark" src={href(root, `link-icons/${link.icon}-dark.svg`)} alt="" width="32" height="32" /></a>
                 </li>
               ))}
             </ul>

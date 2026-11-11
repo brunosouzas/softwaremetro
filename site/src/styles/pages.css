@@ -306,6 +306,11 @@
   list-style: none;
 }
 
+/* A flex item, so a line's height is the anchor's and the gap between lines equals the gap across. */
+.home-icon-links li {
+  display: flex;
+}
+
 .home-icon-links a {
   display: inline-flex;
   padding: 0.25rem;

@@ -475,13 +475,20 @@ test('Narrow row', async ({ page }) => {
   expect(anchors).toHaveLength(8);
   expect(anchors.some(anchor => Math.abs(anchor.top - anchors[0]!.top) > 1)).toBe(true);
   const lines = [...new Set(anchors.map(anchor => Math.round(anchor.top)))].sort((a, b) => a - b);
+  const across: number[] = [];
+  for (let at = 1; at < anchors.length; at++) {
+    if (Math.round(anchors[at]!.top) === Math.round(anchors[at - 1]!.top)) across.push(anchors[at]!.left - anchors[at - 1]!.right);
+  }
+  expect(across.length).toBeGreaterThan(0);
+  for (const gap of across) {
+    expect(gap).toBeGreaterThan(10);
+    expect(gap).toBeCloseTo(across[0]!, 1);
+  }
+  // The gap between lines equals the gap across: no line box adds space under an anchor.
   for (let at = 1; at < lines.length; at++) {
     const above = anchors.filter(anchor => Math.round(anchor.top) === lines[at - 1]);
     const below = anchors.filter(anchor => Math.round(anchor.top) === lines[at]);
-    expect(Math.min(...below.map(anchor => anchor.top)) - Math.max(...above.map(anchor => anchor.bottom))).toBeGreaterThan(10);
-  }
-  for (let at = 1; at < anchors.length; at++) {
-    if (Math.round(anchors[at]!.top) === Math.round(anchors[at - 1]!.top)) expect(anchors[at]!.left - anchors[at - 1]!.right).toBeGreaterThan(10);
+    expect(Math.min(...below.map(anchor => anchor.top)) - Math.max(...above.map(anchor => anchor.bottom))).toBeCloseTo(across[0]!, 1);
   }
   for (const anchor of anchors) {
     expect(anchor.left).toBeGreaterThanOrEqual(container.left);
@@ -496,16 +503,9 @@ test('Accessible name of an icon link', async ({ page }) => {
   const source = page.getByRole('link', { name: 'Source', exact: true });
   await expect(source).toHaveCount(1);
   await expect(source).toHaveAccessibleName('Source');
-  await expect(source).toHaveAttribute('title', 'Source');
-});
-
-// The scenario's last clause: the accessible description is empty, so the title is not read twice.
-// Open question for the owner (AB#326): with aria-label and title both set, Chromium 156 exposes the
-// title as the description ("Source"), and so does Playwright's own computation; the design assumed it
-// would not. Kept as fixme, not deleted, until the markup or the scenario is decided.
-test.fixme('Accessible description of an icon link is empty', async ({ page }) => {
-  await page.goto('/extra/');
-  await expect(page.getByRole('link', { name: 'Source', exact: true })).toHaveAccessibleDescription('');
+  // No tooltip: a title attribute would be exposed as the description and read after the name.
+  await expect(source).toHaveAccessibleDescription('');
+  await expect(source).not.toHaveAttribute('title');
 });
 
 test('No combined image', async ({ page }) => {
