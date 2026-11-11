@@ -589,19 +589,19 @@ The catalogue walk SHALL skip, without a problem and before checking that it can
 - **THEN** it gets an error on `spec.site.home.image`
 
 ### Requirement: Home link icon setting
-A home link's `icon` SHALL be one of `github`, `website`, `linkedin` and `email`, the link icon names of `@brunosouzas/design-system`; any other value SHALL be an error on its path.
+A home link's `icon` SHALL be one of `github`, `website`, `linkedin`, `email` and `stackledger`, the link icon names of `@brunosouzas/design-system`; any other value SHALL be an error on its path.
 
 #### Scenario: Link icon
-- **WHEN** `links[0]` has `icon: github` and `links[1]` has `icon: website`
+- **WHEN** `links[0]` has `icon: github`, `links[1]` has `icon: website` and `links[2]` has `icon: stackledger`
 - **THEN** it has no problem
 
 #### Scenario: Unknown link icon
-- **WHEN** `links[0]` has `icon: twitter`, in a second document `icon: GitHub`, and in a third `icon: "../favicon"`
+- **WHEN** `links[0]` has `icon: twitter`, in a second document `icon: GitHub`, in a third `icon: "../favicon"`, and in a fourth `icon: Stackledger`
 - **THEN** each gets an error on `spec.site.home.links[0].icon`
 
 #### Scenario: Icon names match the design system
 - **WHEN** the allowed `icon` values are compared with the design system's link icon names
-- **THEN** they are the same four names
+- **THEN** they are the same five names
 
 ### Requirement: Map settings
 `spec.map` MAY have `backdrop`, one of `neutral` and `london`; without it the backdrop is `neutral`. Any other value, and any other field under `spec.map`, SHALL be an error. When the `Settings` in use has an error, `stackledger map` without `--backdrop` draws with `neutral`, and so does `stackledger build` whenever it goes on building (build-command "Skills settings with problems" still stops it first); a `--backdrop` option still wins ("Command" of map-command).

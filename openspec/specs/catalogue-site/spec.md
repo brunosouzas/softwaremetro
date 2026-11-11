@@ -244,13 +244,17 @@ A home link with `icon` SHALL start its anchor with that icon: two decorative `i
 - **WHEN** `spec.site.home.links` lists `Source` (`https://github.example.com/northwind/`, `icon: github`) then `Blog` (`https://blog.example.com/`, no icon)
 - **THEN** the anchor of `Source` holds `img` elements with `alt=""` and relative `src` ending in `link-icons/github-light.svg` and `link-icons/github-dark.svg`, before the text `Source`, and the anchor of `Blog` holds no `img`
 
+#### Scenario: Link with the stackledger icon
+- **WHEN** `spec.site.home.links` also lists `Catalogue` (`https://catalogue.example.com/`, `icon: stackledger`)
+- **THEN** the anchor of `Catalogue` holds `img` elements with `alt=""` and relative `src` ending in `link-icons/stackledger-light.svg` and `link-icons/stackledger-dark.svg`, before the text `Catalogue`, and both files are in each built site
+
 #### Scenario: Link icon follows the theme
 - **WHEN** the home with the `Source` link is shown in the light theme, then in the dark theme
 - **THEN** only `github-light.svg` is visible in light and only `github-dark.svg` in dark, each inline before the title
 
 #### Scenario: Link icon files are the design system's
 - **WHEN** each file in `site/public/link-icons/` is read
-- **THEN** there are eight, one per icon and surface, each a 46 × 46 SVG whose shapes equal those of `linkIcon({ icon, x: 0, y: 0, surface })`
+- **THEN** there are ten, one per icon and surface, each a 46 × 46 SVG whose shapes equal those of `linkIcon({ icon, x: 0, y: 0, surface })`
 
 ### Requirement: Site tokens from the design system
 The colour, font-size and heading variables of "Look and theme" SHALL read the `site` variables of `@brunosouzas/design-system` (`--ds-site-*`), which the build ships in the site's own stylesheet. The accent, which is also the focus colour, SHALL read `--ds-brand-<theme>-stackledger-accent`, and the colour on primary `--ds-site-<theme>-body`; neither stays a literal.

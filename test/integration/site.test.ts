@@ -78,12 +78,13 @@ const HOME_SETTINGS = `  site:
         - { title: Team wiki, url: "http://wiki.example.org/" }
         - { title: "${HOSTILE_LINK}", url: "https://example.org/?a=1&b=2" }
 `;
-// catalogue-site "Home links": one link with an icon, one without.
+// catalogue-site "Home links": links with an icon (github, stackledger) and one without.
 const ICON_SETTINGS = `  site:
     home:
       links:
         - { title: Source, url: "https://github.example.com/northwind/", icon: github }
         - { title: Blog, url: "https://blog.example.com/" }
+        - { title: Catalogue, url: "https://catalogue.example.com/", icon: stackledger }
 `;
 const CITY_SETTINGS = '  map:\n    backdrop: london\n';
 const emptyCatalogue = { 'stackledger.yaml': settingsFile({}) };
@@ -194,7 +195,7 @@ test('No other images', () => {
         if (src.endsWith('home-banner.svg')) expect(page).toBe('index.html');
       }
     }
-    expect(icons).toBe(2);
+    expect(icons).toBe(4);
   }
 });
 
@@ -481,6 +482,15 @@ test('Link with an icon', () => {
     expect(anchor('Source')).toBe('<img class="link-icon themed-light" src="link-icons/github-light.svg" alt="" width="24" height="24"><img class="link-icon themed-dark" src="link-icons/github-dark.svg" alt="" width="24" height="24">');
     expect(anchor('Blog')).toBe('');
     for (const file of ['github-light.svg', 'github-dark.svg']) expect(existsSync(join(site, 'link-icons', file))).toBe(true);
+  }
+});
+
+test('Link with the stackledger icon', () => {
+  for (const site of [iconed.full, iconed.staff]) {
+    const html = homeMain(read(site, 'index.html'));
+    const anchor = /<a href="https:\/\/catalogue\.example\.com\/" rel="noopener noreferrer">((?:<img [^>]*>)*)Catalogue<\/a>/.exec(html)![1]!;
+    expect(anchor).toBe('<img class="link-icon themed-light" src="link-icons/stackledger-light.svg" alt="" width="24" height="24"><img class="link-icon themed-dark" src="link-icons/stackledger-dark.svg" alt="" width="24" height="24">');
+    for (const file of ['stackledger-light.svg', 'stackledger-dark.svg']) expect(existsSync(join(site, 'link-icons', file))).toBe(true);
   }
 });
 

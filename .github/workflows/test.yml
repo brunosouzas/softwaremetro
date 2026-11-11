@@ -51,7 +51,9 @@ jobs:
   browser:
     # Playwright (Chromium) on the built Northwind sites served under /full/ and /staff/, and the pinned
     # mermaid package rendering the skills map's fixture diagrams offline; see test/browser/.
-    runs-on: ubuntu-latest
+    # Pinned to 24.04: on the ubuntu-latest image 26.04 (20261101.186.1) `playwright install --with-deps`
+    # cannot resolve the Ubuntu apt mirrors (four runs on 2026-11-11). Back to ubuntu-latest once it can.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
