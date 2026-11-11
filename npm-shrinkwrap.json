@@ -9,7 +9,7 @@
       "version": "0.9.0",
       "license": "Apache-2.0",
       "dependencies": {
-        "@brunosouzas/design-system": "0.10.0",
+        "@brunosouzas/design-system": "0.11.0",
         "@fontsource/source-code-pro": "5.3.1",
         "@fontsource/source-sans-3": "5.3.1",
         "@fontsource/source-serif-4": "5.3.1",
@@ -530,9 +530,9 @@
       ]
     },
     "node_modules/@brunosouzas/design-system": {
-      "version": "0.10.0",
-      "resolved": "https://registry.npmjs.org/@brunosouzas/design-system/-/design-system-0.10.0.tgz",
-      "integrity": "sha512-cRTthUaYSPHnjLvQ5kgQ6Wmsh1Eva8SSmEws5ssGWLFg6htLAMsTSk3kqu9OY2BDmo68fUWxQl72Hdl3YZyNOA==",
+      "version": "0.11.0",
+      "resolved": "https://registry.npmjs.org/@brunosouzas/design-system/-/design-system-0.11.0.tgz",
+      "integrity": "sha512-HnaLxCQW3jK/vpdRqWq5Hrtbc2CpuxUIcFrX6sa/QbMRS3+AbOzxKfZKnc4hzPKGvGGZE4bt8edNXbRqo6eMmQ==",
       "license": "Apache-2.0",
       "dependencies": {
         "harfbuzzjs": "1.6.4"
