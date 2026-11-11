@@ -28,7 +28,7 @@ None.
 
 ### Modified Capabilities
 
-- `catalogue-site`: "Home links" orders the icon row before the text links; "Home link icons" makes an icon link icon-only, named and titled by its title, without description, and ships twelve icon files; the new "Home link icon row" sets size, target, focus ring and spacing.
+- `catalogue-site`: "Home links" orders the icon row before the text links and makes every item of both groups an anchor to its `url`; "Home link icons" makes an icon link icon-only, named and titled by its title, without description, holding only its own icon's two files, the row laid out by CSS over separate anchors (no combined image, sprite or `background-image`, two links with the same icon still two anchors), and ships twelve icon files; the new "Home link icon row" sets the list role (`role="list"`), size, target, focus ring, spacing and wrapping.
 - `catalogue`: "Home link icon setting" names six icons, with `brunosouzas`, and accepts `description` beside `icon`.
 
 ## Implicit requirements
@@ -42,7 +42,12 @@ None.
 
 ## Open questions
 
-- If design system 0.11.0 is not published when the row is ready, should the row ship alone in stackledger 0.10.0 and `brunosouzas` follow in a later change? Recommended: yes; tasks 1 and 2 are independent, and the `catalogue` delta and the twelve-file count then move to the follow-up.
+- If design system 0.11.0 is not published when the row is ready, should the row ship alone in stackledger 0.10.0 and `brunosouzas` follow in a later change? Recommended: no, ship them together in 0.10.0 after design system 0.11.0. If the owner chooses to split, these move to the follow-up: task 2 (the pin, the two art files, `HOME_LINK_ICONS`, the packed files); catalogue-site / Home link icons / "Link with the brunosouzas icon"; the `BrunoSouzas` case of catalogue / Home link icon setting / "Unknown link icon"; the twelve-file count of "Link icon files are the design system's" (back to ten); the sixth name `brunosouzas` in the catalogue requirement, in `links[3]` of "Link icon" and in "Icon names match the design system" (back to five); the six names in task 3.1 (back to five); and the PR title in task 4.1 (without "brunosouzas icon, design system 0.11.0"). In either case "Description beside an icon" and the sentence "A link MAY have both `icon` and `description`" stay in this change.
+
+## Impact
+
+- Code: `site/src/pages/index.astro`, `site/src/styles/pages.css`, `src/schema.ts`, `package.json` and `npm-shrinkwrap.json` (design system pinned to 0.11.0), two new files in `site/public/link-icons/`; tests in `test/integration/site.test.ts`, `test/browser/site.spec.ts`, `test/browser/serve.mjs`, `test/unit/settings.test.ts`.
+- Visible change for the release notes (CHANGELOG): in 0.9.0 an icon link showed its title and its `description` after the icon; from 0.10.0 an icon link is the icon alone and its description is no longer shown. Catalogues stay valid without editing.
 
 ## Documentation
 

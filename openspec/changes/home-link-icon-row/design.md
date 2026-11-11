@@ -8,10 +8,14 @@
 
 ## Markup
 
-Under the `Links` heading: `<ul class="home-icon-links">` when a link has `icon`, then the existing `<ul class="home-external">` when a link has none. Each icon item is `<a href rel="noopener noreferrer" aria-label={title} title={title}>` holding the two themed `img` elements (`alt=""`, `width`/`height` 32) and no text. A `ul` keeps the row announced as a list of n links.
+Under the `Links` heading: `<ul class="home-icon-links" role="list">` when a link has `icon`, then the existing `<ul class="home-external">` when a link has none. Each icon item is `<a href={url} rel="noopener noreferrer" aria-label={title} title={title}>` holding the two themed `img` elements (`alt=""`, `width`/`height` 32) and no text other than whitespace. A `ul` keeps the row announced as a list of n links; the explicit `role="list"` is there because VoiceOver (Safari) drops the list semantics of a `ul` styled `list-style: none`.
 
-- **Name by `aria-label`**, as the owner decided; `title` repeats it as the tooltip. With both equal, the title is not read twice (it is not used as the description when it equals the name).
+- **Name by `aria-label`**, as the owner decided; `title` repeats it as the tooltip. That the title is not read twice relies on Chromium's accessible-description computation (HTML-AAM): a `title` equal to the accessible name is not used as the description. The e2e test checks that behaviour: the anchor's accessible description is empty (`toHaveAccessibleDescription('')`). Other engines are not tested.
 - **Not chosen: visually hidden text** (`.visually-hidden` span). It survives page translation better, but the owner asked for `aria-label`, and an anchor without text keeps "no text" checkable in the HTML. Recorded as a possible later change, not planned.
+
+## Separate icon links
+
+Each link icon stays a separate piece: an icon link's anchor holds only its own icon's two files (light and dark), and the row is laid out by CSS over separate anchors. No combined image, sprite or CSS `background-image` draws the row, so each icon keeps its own anchor, name, target and focus ring, and two links with the same icon are still two anchors, each with its own two `img`. Checked in the built HTML (each `ul.home-icon-links a` holds exactly its own two `img`) and in the browser (no element of the row has a computed `background-image`).
 
 ## Size, target, spacing
 
@@ -19,7 +23,8 @@ The design system has no spacing tokens and `tokens.css` only `--radius`; `pages
 
 - icon `2rem` (32 px at the default size), up from 1.5rem: alone, without a title, the 46-unit sticker must be recognisable, and 2rem is the next step of the scale used for the header marks (28) and the old icons (24);
 - anchor `display: inline-flex` with `padding: 0.25rem` and `border-radius: var(--radius)`: a 40 × 40 target (WCAG 2.2 2.5.8 asks 24 × 24), and the focus ring follows the rounded corner;
-- row `display: flex; flex-wrap: wrap; gap: 0.75rem`, no bullets, no indent: 12 px between targets, more than the two rings of the site's `:focus-visible` (3 px outline, 2 px offset, so 5 px each side), so two rings never touch.
+- the `img` is sized only (`width`, `height`), never given a `display`: `.home-icon-links img { display: block }` would outrank `.themed-dark { display: none }` (`base.css`) and show both icons. Inside the `inline-flex` anchor the shown `img` is a flex item, so its computed `display` is `block` (the theme test expected `inline` before);
+- row `display: flex; flex-wrap: wrap; gap: 0.75rem`, no bullets, no indent: 12 px between targets, across and between lines, more than the two rings of the site's `:focus-visible` (3 px outline, 2 px offset, so 5 px each side), so two rings never touch.
 
 The focus ring is the site's own `:focus-visible` rule; no new focus style. The `.link-icon` rule for icons before a title goes, since a text link no longer has an icon.
 
@@ -30,4 +35,4 @@ The focus ring is the site's own `:focus-visible` rule; no new focus style. The 
 
 ## The `brunosouzas` icon
 
-As in `stackledger-link-icon`: the schema keeps its own copy of the names (`HOME_LINK_ICONS`), so `validate` does not load the design system, with the unit test that it equals `LINK_ICON_NAMES`. `scripts/site-art.mjs` loops over `LINK_ICON_NAMES` and writes the two new files without change.
+As in `stackledger-link-icon`: the schema keeps its own copy of the names (`HOME_LINK_ICONS`), so `validate` does not load the design system, with the unit test that it equals `LINK_ICON_NAMES`. `scripts/site-art.mjs` loops over `LINK_ICON_NAMES` and writes the two new files without change; every other art file it writes stays byte-identical.
