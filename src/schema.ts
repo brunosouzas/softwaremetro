@@ -64,7 +64,7 @@ const homeUrl = z.string().max(2048, 'Must have maximum 2048 characters').superR
 });
 /** Icons a home link may show (catalogue, Home settings): the link icon names of @brunosouzas/design-system.
  * A copy, so validate does not load the design system; test/unit/site-brand.test.ts keeps it equal. */
-export const HOME_LINK_ICONS = ['github', 'website', 'linkedin', 'email', 'stackledger'] as const;
+export const HOME_LINK_ICONS = ['github', 'website', 'linkedin', 'email', 'stackledger', 'brunosouzas'] as const;
 const home = z.strictObject({
   text: text.max(200, 'Must have maximum 200 characters').optional(),
   links: z.array(z.strictObject({

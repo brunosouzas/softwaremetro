@@ -90,6 +90,7 @@ const ICON_SETTINGS = `  site:
         - { title: Blog, url: "https://blog.example.com/", description: Posts }
         - { title: Catalogue, url: "https://catalogue.example.com/", icon: stackledger }
         - { title: Mirror, url: "https://github.example.com/mirror/", icon: github }
+        - { title: Bruno Souza, url: "https://www.example.com/", icon: brunosouzas }
 `;
 // catalogue-site "Only icon links" and "Each icon link holds only its own icon": every link has an icon.
 const ICON_ONLY_SETTINGS = `  site:
@@ -211,8 +212,8 @@ test('No other images', () => {
         if (src.endsWith('home-banner.svg')) expect(page).toBe('index.html');
       }
     }
-    // Two img (light and dark) per icon link: Source, Catalogue and Mirror.
-    expect(icons).toBe(2 * 3);
+    // Two img (light and dark) per icon link: Source, Catalogue, Mirror and Bruno Souza.
+    expect(icons).toBe(2 * 4);
   }
 });
 
@@ -521,14 +522,14 @@ test('Icon row before text links', () => {
     expect(heading).toBeGreaterThan(-1);
     expect(html.indexOf('<ul class="home-icon-links"')).toBeGreaterThan(heading);
     expect(html.indexOf('<ul class="home-external">')).toBeGreaterThan(html.indexOf('<ul class="home-icon-links"'));
-    expect(iconRow(html)!.map(anchor => anchor.attrs['aria-label'])).toEqual(['Source', 'Catalogue', 'Mirror']);
+    expect(iconRow(html)!.map(anchor => anchor.attrs['aria-label'])).toEqual(['Source', 'Catalogue', 'Mirror', 'Bruno Souza']);
     const list = /<ul class="home-external">([\s\S]*?)<\/ul>/.exec(html)![1]!;
     expect([...list.matchAll(/<a\b[^>]*>([^<]*)<\/a>/g)].map(match => match[1])).toEqual(['Blog']);
     expect(list).toMatch(/>Blog<\/a>\s*<span class="muted"> · Posts<\/span>/);
     // Every anchor of both groups: its link's url, rel="noopener noreferrer", no target.
     const anchors = [...html.matchAll(/<a\b([^>]*)>/g)].map(match => Object.fromEntries(attrsOf(match[1]!).map(attr => [attr.name, decodeAll(attr.value)])))
       .filter(attrs => /^https?:/.test(attrs.href ?? ''));
-    expect(anchors.map(attrs => attrs.href)).toEqual(['https://github.example.com/northwind/', 'https://catalogue.example.com/', 'https://github.example.com/mirror/', 'https://blog.example.com/']);
+    expect(anchors.map(attrs => attrs.href)).toEqual(['https://github.example.com/northwind/', 'https://catalogue.example.com/', 'https://github.example.com/mirror/', 'https://www.example.com/', 'https://blog.example.com/']);
     for (const attrs of anchors) { expect(attrs.rel).toBe('noopener noreferrer'); expect(attrs).not.toHaveProperty('target'); }
   }
 });
@@ -559,7 +560,7 @@ test('Link with an icon', () => {
 });
 
 test('Each icon link holds only its own icon', () => {
-  const icons: Record<string, string> = { Site: 'website', Source: 'github', Catalogue: 'stackledger', Mirror: 'github' };
+  const icons: Record<string, string> = { Site: 'website', Source: 'github', Catalogue: 'stackledger', Mirror: 'github', 'Bruno Souza': 'brunosouzas' };
   for (const site of [iconed.full, iconed.staff, iconOnly.full, iconOnly.staff]) {
     const row = iconRow(read(site, 'index.html'))!;
     expect(row.length).toBeGreaterThan(0);
@@ -584,6 +585,15 @@ test('Link with the stackledger icon', () => {
     expect([catalogue.attrs['aria-label'], catalogue.attrs.title]).toEqual(['Catalogue', undefined]);
     expect(catalogue.images).toEqual(iconImages('stackledger'));
     for (const file of ['stackledger-light.svg', 'stackledger-dark.svg']) expect(existsSync(join(site, 'link-icons', file))).toBe(true);
+  }
+});
+
+test('Link with the brunosouzas icon', () => {
+  for (const site of [iconed.full, iconed.staff]) {
+    const bruno = iconRow(read(site, 'index.html'))!.find(anchor => anchor.attrs['aria-label'] === 'Bruno Souza')!;
+    expect(bruno.attrs).toEqual({ href: 'https://www.example.com/', rel: 'noopener noreferrer', 'aria-label': 'Bruno Souza' });
+    expect(bruno.images).toEqual(iconImages('brunosouzas'));
+    for (const file of ['brunosouzas-light.svg', 'brunosouzas-dark.svg']) expect(existsSync(join(site, 'link-icons', file))).toBe(true);
   }
 });
 
