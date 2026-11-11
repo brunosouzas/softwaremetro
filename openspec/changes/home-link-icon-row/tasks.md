@@ -19,7 +19,7 @@ Task 1 does not wait; task 2 waits for `@brunosouzas/design-system` 0.11.0 on np
 
 ## 3. Documentation
 
-- [ ] 3.1 `docs/catalogue-format.md`, `spec.site.home.links`: six icon names; a link with `icon` is shown as an icon in a row before the other links, named by its title; "`description` is not shown when `icon` is set". `docs/site.md`: the Home row of the pages table and "Marks and art" (icon links as a row of icons, no title text). `docs/roadmap.md`: a row for `home-link-icon-row`, and the `stackledger-link-icon` row marked released in 0.9.0. Verified by the review and the docs tests in `npm test`.
+- [x] 3.1 `docs/catalogue-format.md`, `spec.site.home.links`: six icon names; a link with `icon` is shown as an icon in a row before the other links, named by its title; "`description` is not shown when `icon` is set". `docs/site.md`: the Home row of the pages table and "Marks and art" (icon links as a row of icons, no title text). `docs/roadmap.md`: a row for `home-link-icon-row`, and the `stackledger-link-icon` row marked released in 0.9.0. Verified by the review and the docs tests in `npm test`.
 
 ## 4. Release
 
