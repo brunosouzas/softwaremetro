@@ -2,8 +2,10 @@
 // Home page (catalogue-site, Home page, Home page chrome and Home links): a banner with the site title
 // and text, a card per division with the view's counts and links, then the configured links.
 // The links are the only URLs to other sites (site-security, No external requests): validated http(s)
-// URLs from spec.site.home.links, opened in the same tab, with rel="noopener noreferrer".
+// URLs from spec.site.home.links, each opened in a new tab and announced as such (NewTabLink,
+// catalogue-site External links in a new tab).
 import Base from '../layouts/Base.astro';
+import NewTabLink from '../components/NewTabLink.astro';
 import { href, rootFor, site } from '../lib/site';
 
 const root = rootFor(Astro.url.pathname);
@@ -66,7 +68,7 @@ const textLinks = links.filter(link => !link.icon);
             <ul class="home-icon-links" role="list">
               {iconLinks.map(link => (
                 <li>
-                  <a href={link.url} rel="noopener noreferrer" aria-label={link.title}><img class="themed-light" src={href(root, `link-icons/${link.icon}-light.svg`)} alt="" width="32" height="32" /><img class="themed-dark" src={href(root, `link-icons/${link.icon}-dark.svg`)} alt="" width="32" height="32" /></a>
+                  <NewTabLink href={link.url} label={link.title}><img class="themed-light" src={href(root, `link-icons/${link.icon}-light.svg`)} alt="" width="32" height="32" /><img class="themed-dark" src={href(root, `link-icons/${link.icon}-dark.svg`)} alt="" width="32" height="32" /></NewTabLink>
                 </li>
               ))}
             </ul>
@@ -75,7 +77,7 @@ const textLinks = links.filter(link => !link.icon);
             <ul class="home-external">
               {textLinks.map(link => (
                 <li>
-                  <a href={link.url} rel="noopener noreferrer">{link.title}</a>
+                  <NewTabLink href={link.url}>{link.title}</NewTabLink>
                   {link.description && <span class="muted"> · {link.description}</span>}
                 </li>
               ))}

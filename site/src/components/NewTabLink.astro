@@ -1,0 +1,24 @@
+---
+// An anchor to another site (catalogue-site, External links in a new tab): it opens in a new tab,
+// with rel="noopener noreferrer" so the other page gets no window.opener and no referrer, and its
+// accessible name ends with NEW_TAB so a screen reader announces the new tab (WCAG technique G201).
+// With `label` (an icon link, whose anchor holds no text) the name is the aria-label; without it,
+// the anchor's own text is the name and the suffix is visually hidden text, so nothing changes on
+// screen. No `title` attribute: it would be read again as the description (Home link icons).
+// Use it only for an absolute URL to another site: a relative href here would open the site's own
+// page in a new tab, which the integration test "Only external anchors open a new tab" catches.
+interface Props {
+  href: string;
+  label?: string | undefined;
+}
+const NEW_TAB = ' (opens in a new tab)';
+const { href, label } = Astro.props;
+---
+
+{
+  label === undefined ? (
+    <a href={href} target="_blank" rel="noopener noreferrer"><slot /><span class="visually-hidden">{NEW_TAB}</span></a>
+  ) : (
+    <a href={href} target="_blank" rel="noopener noreferrer" aria-label={`${label}${NEW_TAB}`}><slot /></a>
+  )
+}
