@@ -17,4 +17,4 @@ Levels: integration is vitest on the built sites (`npm test`, after `npm run bui
 
 ## 4. Release
 
-- [ ] 4.1 Open the pull request titled `fix: external links open in a new tab, announced to screen readers (AB#336)` (the `Title` check), with a `BEGIN_COMMIT_OVERRIDE` block naming the change for the CHANGELOG; do not set the version. After the merge, release-please proposes 0.10.1; Bruno merges it and approves the `npm` environment (`docs/release.md`). Verified by `npm view @brunosouzas/stackledger version` printing `0.10.1`.
+- [x] 4.1 Open the pull request titled `fix: external links open in a new tab, announced to screen readers (AB#336)` (the `Title` check), with a `BEGIN_COMMIT_OVERRIDE` block naming the change for the CHANGELOG; do not set the version. After the merge, release-please proposes 0.10.1; Bruno merges it and approves the `npm` environment (`docs/release.md`). Verified by `npm view @brunosouzas/stackledger version` printing `0.10.1`.
