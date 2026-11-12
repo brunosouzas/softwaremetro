@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/brunosouzas/stackledger/compare/v0.10.0...v0.10.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* external links open in a new tab, announced to screen readers ([AB[#336](https://github.com/brunosouzas/stackledger/issues/336)](https://dev.azure.com/brunosouzas/3a445f01-88d9-4da2-a5a8-63a69f991a31/_workitems/edit/336)) ([d509bab](https://github.com/brunosouzas/stackledger/commit/d509bab5f8a422ec2405f40c63e627ea6f3ce53c))
+* the home links and the map's OpenStreetMap credit now open in a new tab (previously the same tab), with rel="noopener noreferrer"; screen readers hear "(opens in a new tab)" after each link's name; links inside the site are unchanged ([AB[#336](https://github.com/brunosouzas/stackledger/issues/336)](https://dev.azure.com/brunosouzas/3a445f01-88d9-4da2-a5a8-63a69f991a31/_workitems/edit/336)) ([d509bab](https://github.com/brunosouzas/stackledger/commit/d509bab5f8a422ec2405f40c63e627ea6f3ce53c))
+
 ## [0.10.0](https://github.com/brunosouzas/stackledger/compare/v0.9.0...v0.10.0) (2026-11-12)
 
 
