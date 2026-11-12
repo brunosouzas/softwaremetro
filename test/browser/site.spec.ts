@@ -672,6 +672,7 @@ test('The reader keeps their place', async ({ context, page }) => {
   await tab.waitForLoadState();
   expect(tab.url()).toBe('https://blog.example.com/');
   expect(await tab.evaluate(() => window.opener)).toBeNull();
+  expect(await tab.evaluate(() => document.referrer)).toBe('');
   expect(new URL(page.url()).pathname).toBe('/extra/');
   expect(context.pages()).toHaveLength(2);
 });

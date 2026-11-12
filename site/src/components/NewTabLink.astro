@@ -5,7 +5,8 @@
 // With `label` (an icon link, whose anchor holds no text) the name is the aria-label; without it,
 // the anchor's own text is the name and the suffix is visually hidden text, so nothing changes on
 // screen. No `title` attribute: it would be read again as the description (Home link icons).
-// Only the URLs site-security allows reach this component: the build fails on any other.
+// Use it only for an absolute URL to another site: a relative href here would open the site's own
+// page in a new tab, which the integration test "Only external anchors open a new tab" catches.
 interface Props {
   href: string;
   label?: string | undefined;

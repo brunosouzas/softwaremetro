@@ -17,7 +17,7 @@ On every page of both sites, an anchor to another site (an `href` that is an abs
 
 #### Scenario: The reader keeps their place
 - **WHEN** the reader clicks the `Blog` link on the home in a browser
-- **THEN** a new tab opens on `https://blog.example.com/`, it has no `window.opener`, and the home stays open at its own address in the first tab
+- **THEN** a new tab opens on `https://blog.example.com/`, it has no `window.opener` and an empty `document.referrer`, and the home stays open at its own address in the first tab
 
 #### Scenario: Hostile title in a new-tab link
 - **WHEN** an icon link's title is `"><script>alert(1)</script>`
@@ -27,8 +27,8 @@ On every page of both sites, an anchor to another site (an `href` that is an abs
 Every anchor of both sites whose `href` is relative (a page or file of the same site: header, sub-navigation, cards, tables, item, journey, report and skills pages, the calendar download) SHALL have no `target` attribute and no ` (opens in a new tab)` in its name or text.
 
 #### Scenario: Only external anchors open a new tab
-- **WHEN** the `full` and `staff` sites are built from a catalogue with home icon and text links and `spec.map.backdrop: london`, and from a catalogue with a skill set
-- **THEN** across every HTML page, each anchor with `target` has an absolute `href` and `target="_blank"`, each anchor with an absolute `href` has `target="_blank"`, and no anchor with a relative `href` has `target` or the text `opens in a new tab`
+- **WHEN** the `full` and `staff` sites are built from catalogues with home icon links, home text links and `spec.map.backdrop: london`, and from a catalogue with a skill set
+- **THEN** across every HTML page, each anchor with `target` has an absolute `href` and `target="_blank"`, each anchor with an absolute `href` has `target="_blank"`, `rel="noopener noreferrer"` and no `title`, and no anchor with a relative `href` has `target` or the text `opens in a new tab`
 
 #### Scenario: No external link, no new tab
 - **WHEN** the sites are built from the example catalogue, which has no home links and no city backdrop

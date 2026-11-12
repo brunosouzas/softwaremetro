@@ -683,6 +683,7 @@ test('Only external anchors open a new tab', () => {
     for (const anchor of external) {
       expect(anchor.attrs.target, `${anchor.page} ${anchor.attrs.href}`).toBe('_blank');
       expect(anchor.attrs.rel, `${anchor.page} ${anchor.attrs.href}`).toBe('noopener noreferrer');
+      expect(anchor.attrs, `${anchor.page} ${anchor.attrs.href}`).not.toHaveProperty('title');
       expect(anchor.attrs['aria-label'] ?? `${anchor.inner.replace(/<[^>]*>/g, '')}`, `${anchor.page} ${anchor.attrs.href}`).toMatch(/\S \(opens in a new tab\)$/);
     }
     for (const anchor of anchors.filter(anchor => !absolute(anchor.attrs.href))) {
