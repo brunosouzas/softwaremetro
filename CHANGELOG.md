@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0](https://github.com/brunosouzas/stackledger/compare/v0.9.0...v0.10.0) (2026-11-12)
+
+
+### Features
+
+* a home link with an icon shows the icon alone; its description, shown in 0.9.0, is no longer shown, and its title is the link's accessible name ([AB[#326](https://github.com/brunosouzas/stackledger/issues/326)](https://dev.azure.com/brunosouzas/3a445f01-88d9-4da2-a5a8-63a69f991a31/_workitems/edit/326)) ([4dfb97e](https://github.com/brunosouzas/stackledger/commit/4dfb97ee1eef95d37d667d58d38c4ca5e52faec6))
+* home links as a row of icons, brunosouzas icon, design system 0.11.0 ([AB[#326](https://github.com/brunosouzas/stackledger/issues/326)](https://dev.azure.com/brunosouzas/3a445f01-88d9-4da2-a5a8-63a69f991a31/_workitems/edit/326)) ([4dfb97e](https://github.com/brunosouzas/stackledger/commit/4dfb97ee1eef95d37d667d58d38c4ca5e52faec6))
+
 ## [0.9.0](https://github.com/brunosouzas/stackledger/compare/v0.8.1...v0.9.0) (2026-11-11)
 
 
