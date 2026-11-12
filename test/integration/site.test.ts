@@ -474,10 +474,11 @@ test('Two links', () => {
   for (const site of [linked.full, linked.staff]) {
     const html = homeMain(read(site, 'index.html'));
     expect(html).toContain('<h2>Links</h2>');
-    const anchors = [...html.matchAll(/<a href="(https?:[^"]*)"([^>]*)>([^<]*)<\/a>/g)].map(match => ({ href: decode(match[1]!), attrs: match[2]!, text: match[3]! }));
+    // Each anchor shows only its title; the new-tab note after it is visually hidden (External links in a new tab).
+    const anchors = [...html.matchAll(/<a href="(https?:[^"]*)"([^>]*)>([^<]*)<span class="visually-hidden"> \(opens in a new tab\)<\/span><\/a>/g)].map(match => ({ href: decode(match[1]!), attrs: match[2]!, text: match[3]! }));
     expect(anchors.map(anchor => anchor.href)).toEqual(['https://example.org/articles/', 'http://wiki.example.org/', 'https://example.org/?a=1&b=2']);
     expect(anchors.map(anchor => anchor.text).slice(0, 2)).toEqual(['Articles', 'Team wiki']);
-    for (const anchor of anchors) { expect(anchor.attrs).toContain('rel="noopener noreferrer"'); expect(anchor.attrs).not.toContain('target'); }
+    for (const anchor of anchors) expect(anchor.attrs).toBe(' target="_blank" rel="noopener noreferrer"');
     expect(html.indexOf('What I write')).toBeGreaterThan(html.indexOf('>Articles<'));
     expect(html.indexOf('What I write')).toBeLessThan(html.indexOf('>Team wiki<'));
   }
@@ -511,6 +512,12 @@ function iconRow(html: string): IconAnchor[] | undefined {
   }));
 }
 
+// catalogue-site, External links in a new tab: the end of a new-tab link's accessible name, in an icon
+// link's aria-label or as visually hidden text after a text link's title.
+const NEW_TAB = ' (opens in a new tab)';
+const NEW_TAB_NOTE = `<span class="visually-hidden">${NEW_TAB}</span>`;
+const newTab = (title: string) => `${title}${NEW_TAB}`;
+
 /** The two img of an icon link: light then dark, decorative, 32 x 32. */
 const iconImages = (icon: string) => (['light', 'dark'] as const).map(surface =>
   ({ class: `themed-${surface}`, src: `link-icons/${icon}-${surface}.svg`, alt: '', width: '32', height: '32' }));
@@ -522,15 +529,15 @@ test('Icon row before text links', () => {
     expect(heading).toBeGreaterThan(-1);
     expect(html.indexOf('<ul class="home-icon-links"')).toBeGreaterThan(heading);
     expect(html.indexOf('<ul class="home-external">')).toBeGreaterThan(html.indexOf('<ul class="home-icon-links"'));
-    expect(iconRow(html)!.map(anchor => anchor.attrs['aria-label'])).toEqual(['Source', 'Catalogue', 'Mirror', 'Bruno Souza']);
+    expect(iconRow(html)!.map(anchor => anchor.attrs['aria-label'])).toEqual(['Source', 'Catalogue', 'Mirror', 'Bruno Souza'].map(newTab));
     const list = /<ul class="home-external">([\s\S]*?)<\/ul>/.exec(html)![1]!;
-    expect([...list.matchAll(/<a\b[^>]*>([^<]*)<\/a>/g)].map(match => match[1])).toEqual(['Blog']);
-    expect(list).toMatch(/>Blog<\/a>\s*<span class="muted"> · Posts<\/span>/);
-    // Every anchor of both groups: its link's url, rel="noopener noreferrer", no target.
+    expect([...list.matchAll(/<a\b[^>]*>([^<]*)<span/g)].map(match => match[1])).toEqual(['Blog']);
+    expect(list).toMatch(/>Blog<span class="visually-hidden"> \(opens in a new tab\)<\/span><\/a>\s*<span class="muted"> · Posts<\/span>/);
+    // Every anchor of both groups: its link's url, opened in a new tab with rel="noopener noreferrer".
     const anchors = [...html.matchAll(/<a\b([^>]*)>/g)].map(match => Object.fromEntries(attrsOf(match[1]!).map(attr => [attr.name, decodeAll(attr.value)])))
       .filter(attrs => /^https?:/.test(attrs.href ?? ''));
     expect(anchors.map(attrs => attrs.href)).toEqual(['https://github.example.com/northwind/', 'https://catalogue.example.com/', 'https://github.example.com/mirror/', 'https://www.example.com/', 'https://blog.example.com/']);
-    for (const attrs of anchors) { expect(attrs.rel).toBe('noopener noreferrer'); expect(attrs).not.toHaveProperty('target'); }
+    for (const attrs of anchors) { expect(attrs.rel).toBe('noopener noreferrer'); expect(attrs.target).toBe('_blank'); }
   }
 });
 
@@ -538,7 +545,7 @@ test('Only icon links', () => {
   for (const site of [iconOnly.full, iconOnly.staff]) {
     const html = homeMain(read(site, 'index.html'));
     expect(html).toContain('<h2>Links</h2>');
-    expect(iconRow(html)!.map(anchor => anchor.attrs['aria-label'])).toEqual(['Site', 'Source', 'Catalogue']);
+    expect(iconRow(html)!.map(anchor => anchor.attrs['aria-label'])).toEqual(['Site', 'Source', 'Catalogue'].map(newTab));
     expect(html).not.toContain('home-external');
   }
   // And a home with text links only has no row.
@@ -548,13 +555,13 @@ test('Only icon links', () => {
 test('Link with an icon', () => {
   for (const site of [iconed.full, iconed.staff]) {
     const html = read(site, 'index.html');
-    const source = iconRow(html)!.find(anchor => anchor.attrs['aria-label'] === 'Source')!;
-    expect(source.attrs).toEqual({ href: 'https://github.example.com/northwind/', rel: 'noopener noreferrer', 'aria-label': 'Source' });
+    const source = iconRow(html)!.find(anchor => anchor.attrs['aria-label'] === newTab('Source'))!;
+    expect(source.attrs).toEqual({ href: 'https://github.example.com/northwind/', target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'Source (opens in a new tab)' });
     expect(source.text.trim()).toBe('');
     expect(source.images).toEqual(iconImages('github'));
     expect(html).not.toContain('Our code');
-    const blog = /<a href="https:\/\/blog\.example\.com\/" rel="noopener noreferrer">([\s\S]*?)<\/a>/.exec(homeMain(html))![1]!;
-    expect(blog).toBe('Blog');
+    const blog = /<a href="https:\/\/blog\.example\.com\/" target="_blank" rel="noopener noreferrer">([\s\S]*?)<\/a>/.exec(homeMain(html))![1]!;
+    expect(blog).toBe(`Blog${NEW_TAB_NOTE}`);
     for (const file of ['github-light.svg', 'github-dark.svg']) expect(existsSync(join(site, 'link-icons', file))).toBe(true);
   }
 });
@@ -564,7 +571,7 @@ test('Each icon link holds only its own icon', () => {
   for (const site of [iconed.full, iconed.staff, iconOnly.full, iconOnly.staff]) {
     const row = iconRow(read(site, 'index.html'))!;
     expect(row.length).toBeGreaterThan(0);
-    for (const anchor of row) expect(anchor.images, anchor.attrs['aria-label']).toEqual(iconImages(icons[anchor.attrs['aria-label']!]!));
+    for (const anchor of row) expect(anchor.images, anchor.attrs['aria-label']).toEqual(iconImages(icons[anchor.attrs['aria-label']!.replace(NEW_TAB, '')]!));
   }
 });
 
@@ -572,8 +579,8 @@ test('Same icon twice', () => {
   for (const site of [iconed.full, iconed.staff]) {
     const github = iconRow(read(site, 'index.html'))!.filter(anchor => anchor.images.some(image => image.src!.includes('github')));
     expect(github.map(anchor => [anchor.attrs.href, anchor.attrs['aria-label'], anchor.attrs.title])).toEqual([
-      ['https://github.example.com/northwind/', 'Source', undefined],
-      ['https://github.example.com/mirror/', 'Mirror', undefined],
+      ['https://github.example.com/northwind/', newTab('Source'), undefined],
+      ['https://github.example.com/mirror/', newTab('Mirror'), undefined],
     ]);
     for (const anchor of github) expect(anchor.images).toEqual(iconImages('github'));
   }
@@ -582,7 +589,7 @@ test('Same icon twice', () => {
 test('Link with the stackledger icon', () => {
   for (const site of [iconed.full, iconed.staff]) {
     const catalogue = iconRow(read(site, 'index.html'))!.find(anchor => anchor.attrs.href === 'https://catalogue.example.com/')!;
-    expect([catalogue.attrs['aria-label'], catalogue.attrs.title]).toEqual(['Catalogue', undefined]);
+    expect([catalogue.attrs['aria-label'], catalogue.attrs.title]).toEqual([newTab('Catalogue'), undefined]);
     expect(catalogue.images).toEqual(iconImages('stackledger'));
     for (const file of ['stackledger-light.svg', 'stackledger-dark.svg']) expect(existsSync(join(site, 'link-icons', file))).toBe(true);
   }
@@ -590,8 +597,8 @@ test('Link with the stackledger icon', () => {
 
 test('Link with the brunosouzas icon', () => {
   for (const site of [iconed.full, iconed.staff]) {
-    const bruno = iconRow(read(site, 'index.html'))!.find(anchor => anchor.attrs['aria-label'] === 'Bruno Souza')!;
-    expect(bruno.attrs).toEqual({ href: 'https://www.example.com/', rel: 'noopener noreferrer', 'aria-label': 'Bruno Souza' });
+    const bruno = iconRow(read(site, 'index.html'))!.find(anchor => anchor.attrs['aria-label'] === newTab('Bruno Souza'))!;
+    expect(bruno.attrs).toEqual({ href: 'https://www.example.com/', target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'Bruno Souza (opens in a new tab)' });
     expect(bruno.images).toEqual(iconImages('brunosouzas'));
     for (const file of ['brunosouzas-light.svg', 'brunosouzas-dark.svg']) expect(existsSync(join(site, 'link-icons', file))).toBe(true);
   }
@@ -601,9 +608,9 @@ test('Hostile icon title', () => {
   for (const site of [hostile.full, hostile.staff]) {
     const html = read(site, 'index.html');
     const [anchor] = iconRow(html)!;
-    expect([anchor!.attrs['aria-label'], anchor!.attrs.title]).toEqual([HOSTILE_ICON, undefined]);
+    expect([anchor!.attrs['aria-label'], anchor!.attrs.title]).toEqual([newTab(HOSTILE_ICON), undefined]);
     // The quote is escaped, so the value cannot close its attribute; < and > stay text inside it.
-    expect(html).toContain('aria-label="&quot;><script>alert(1)</script>">');
+    expect(html).toContain('aria-label="&quot;><script>alert(1)</script> (opens in a new tab)">');
     expect(html).not.toContain(HOSTILE_ICON);
     // No script element from it: every script of the page is the site's own module.
     for (const tag of tagsOf(html).filter(tag => tag.name === 'script')) expect(tag.attrs).toMatch(/^ type="module" src="_astro\/[^"]+\.js"$/);
@@ -631,6 +638,71 @@ test('Hostile link text', () => {
   const html = read(linked.full, 'index.html');
   expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
   expect(html).not.toContain(HOSTILE_LINK);
+});
+
+// catalogue-site, External links in a new tab: every anchor to another site opens in a new tab and says so.
+test('Text link in a new tab', () => {
+  for (const site of [iconed.full, iconed.staff]) {
+    const anchor = tagsOf(homeMain(read(site, 'index.html'))).filter(tag => tag.name === 'a')
+      .map(tag => Object.fromEntries(attrsOf(tag.attrs).map(attr => [attr.name, decodeAll(attr.value)])))
+      .find(attrs => attrs.href === 'https://blog.example.com/')!;
+    expect(anchor).toEqual({ href: 'https://blog.example.com/', target: '_blank', rel: 'noopener noreferrer' });
+    expect(homeMain(read(site, 'index.html'))).toContain(`rel="noopener noreferrer">Blog${NEW_TAB_NOTE}</a>`);
+  }
+});
+
+test('Icon link in a new tab', () => {
+  for (const site of [iconed.full, iconed.staff]) {
+    const source = iconRow(read(site, 'index.html'))!.find(anchor => anchor.attrs.href === 'https://github.example.com/northwind/')!;
+    expect(source.attrs).toEqual({ href: 'https://github.example.com/northwind/', target: '_blank', rel: 'noopener noreferrer', 'aria-label': 'Source (opens in a new tab)' });
+    expect(source.text.trim()).toBe('');
+  }
+});
+
+test('Map credit in a new tab', () => {
+  for (const site of [city.full, city.staff]) {
+    const credit = /<p class="map-credit">([\s\S]*?)<\/p>/.exec(read(site, 'map/index.html'))![1]!;
+    expect(credit.trim()).toBe(`Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors${NEW_TAB_NOTE}</a>`);
+  }
+});
+
+/** Every anchor of every HTML page of a site, as page, decoded attributes and inner HTML. */
+function anchorsOf(site: string): { page: string; attrs: Record<string, string>; inner: string }[] {
+  return pages(site).flatMap(page => [...read(site, page).matchAll(/<a\b((?:"[^"]*"|'[^']*'|[^>"'])*)>([\s\S]*?)<\/a>/g)].map(match => ({
+    page, attrs: Object.fromEntries(attrsOf(match[1]!).map(attr => [attr.name, decodeAll(attr.value)])), inner: match[2]!,
+  })));
+}
+const absolute = (url = '') => /^(?:[A-Za-z][A-Za-z0-9+.-]*:|\/\/)/.test(url);
+
+// catalogue-site, Internal links in the same tab: only the anchors to other sites have a target.
+test('Only external anchors open a new tab', () => {
+  for (const site of [iconed.full, iconed.staff, linked.full, linked.staff, city.full, city.staff]) {
+    const anchors = anchorsOf(site);
+    const external = anchors.filter(anchor => absolute(anchor.attrs.href));
+    expect(external.length, site).toBeGreaterThan(0);
+    for (const anchor of external) {
+      expect(anchor.attrs.target, `${anchor.page} ${anchor.attrs.href}`).toBe('_blank');
+      expect(anchor.attrs.rel, `${anchor.page} ${anchor.attrs.href}`).toBe('noopener noreferrer');
+      expect(anchor.attrs['aria-label'] ?? `${anchor.inner.replace(/<[^>]*>/g, '')}`, `${anchor.page} ${anchor.attrs.href}`).toMatch(/\S \(opens in a new tab\)$/);
+    }
+    for (const anchor of anchors.filter(anchor => !absolute(anchor.attrs.href))) {
+      expect(anchor.attrs, `${anchor.page} ${anchor.attrs.href}`).not.toHaveProperty('target');
+      expect(`${anchor.attrs['aria-label'] ?? ''} ${anchor.inner}`, `${anchor.page} ${anchor.attrs.href}`).not.toContain('opens in a new tab');
+    }
+  }
+  // Both kinds of page: the city sites' map pages hold the credit, the home pages the links.
+  expect(anchorsOf(city.full).filter(anchor => absolute(anchor.attrs.href)).map(anchor => anchor.page))
+    .toEqual(['index.html', 'index.html', 'index.html', 'map/index.html']);
+});
+
+test('No external link, no new tab', () => {
+  for (const site of [example.full, example.staff]) {
+    for (const page of pages(site)) {
+      const html = read(site, page);
+      expect(tagsOf(html).filter(tag => tag.name === 'a' && /\starget\s*=/.test(tag.attrs)), page).toEqual([]);
+      expect(html, page).not.toContain('opens in a new tab');
+    }
+  }
 });
 
 // site-security, No external requests: the configured links are the only absolute URLs, on the home only.

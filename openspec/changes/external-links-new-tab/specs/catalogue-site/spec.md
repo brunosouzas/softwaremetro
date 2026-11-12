@@ -27,7 +27,7 @@ On every page of both sites, an anchor to another site (an `href` that is an abs
 Every anchor of both sites whose `href` is relative (a page or file of the same site: header, sub-navigation, cards, tables, item, journey, report and skills pages, the calendar download) SHALL have no `target` attribute and no ` (opens in a new tab)` in its name or text.
 
 #### Scenario: Only external anchors open a new tab
-- **WHEN** the `full` and `staff` sites are built from a catalogue with home icon and text links, `spec.map.backdrop: london` and a skill set
+- **WHEN** the `full` and `staff` sites are built from a catalogue with home icon and text links and `spec.map.backdrop: london`, and from a catalogue with a skill set
 - **THEN** across every HTML page, each anchor with `target` has an absolute `href` and `target="_blank"`, each anchor with an absolute `href` has `target="_blank"`, and no anchor with a relative `href` has `target` or the text `opens in a new tab`
 
 #### Scenario: No external link, no new tab

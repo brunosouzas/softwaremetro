@@ -3,8 +3,10 @@
 // pan, line highlight and zone filter. The map SVG has no title band or legend: the line chips are
 // the legend (buttons that highlight a line) and the symbols are listed under them. Without
 // JavaScript the whole map and both legends are shown; only the zoom and zone tools stay hidden.
-// Over a city backdrop the OpenStreetMap credit sits right under the frame (catalogue-site, Map backdrop).
+// Over a city backdrop the OpenStreetMap credit sits right under the frame (catalogue-site, Map backdrop),
+// its link opened in a new tab and announced as such (NewTabLink, External links in a new tab).
 import Base from '../../layouts/Base.astro';
+import NewTabLink from '../../components/NewTabLink.astro';
 import Themed from '../../components/Themed.astro';
 import { site } from '../../lib/site';
 
@@ -45,7 +47,7 @@ const { lines, zones, symbols } = site.map;
     {
       site.map.credit && (
         <p class="map-credit">
-          Map data © <a href="https://www.openstreetmap.org/copyright" rel="noopener noreferrer">OpenStreetMap contributors</a>
+          Map data © <NewTabLink href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</NewTabLink>
         </p>
       )
     }

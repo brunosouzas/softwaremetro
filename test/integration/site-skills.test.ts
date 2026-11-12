@@ -61,6 +61,20 @@ beforeAll(async () => {
 }, 240_000);
 afterAll(() => { if (base) rmSync(base, { recursive: true, force: true }); });
 
+// catalogue-site, Internal links in the same tab, "Only external anchors open a new tab": the Skills
+// pages link only inside the site, so none of their anchors has a target or a new-tab note.
+test('Only external anchors open a new tab (Skills pages)', () => {
+  for (const site of ['full', 'staff']) {
+    const htmlFiles = files(join(out, site)).filter(file => file.endsWith('.html'));
+    expect(htmlFiles.filter(file => file.startsWith('skills/')).length).toBeGreaterThan(0);
+    for (const file of htmlFiles) {
+      const text = readFileSync(join(out, site, file), 'utf8');
+      for (const [anchor] of text.matchAll(/<a\b(?:"[^"]*"|'[^']*'|[^>"'])*>/g)) expect(anchor, file).not.toMatch(/\starget\s*=/);
+      expect(text, file).not.toContain('opens in a new tab');
+    }
+  }
+});
+
 test('Skills link', () => {
   for (const site of ['full', 'staff']) {
     for (const page of ['', 'software/editor', 'skills', 'skills/writer']) {

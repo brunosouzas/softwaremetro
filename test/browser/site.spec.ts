@@ -8,7 +8,7 @@
  * map and table without JavaScript, and the full site's Reports page and calendar file (licence-reports).
  * Data is the fictitious example in examples/northwind.
  */
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { siteIcons } from '../../src/site/ui-icons.js';
 import { mapSize } from './map-size.js';
 
@@ -425,10 +425,10 @@ test('Icons side by side', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/extra/');
   await expect(page.locator('ul.home-icon-links')).toHaveAttribute('role', 'list');
-  const row = page.getByRole('list').filter({ has: page.getByRole('link', { name: 'Source', exact: true }) });
+  const row = page.getByRole('list').filter({ has: page.getByRole('link', { name: 'Source (opens in a new tab)', exact: true }) });
   await expect(row).toHaveCount(1);
   await expect(row.getByRole('listitem')).toHaveCount(8);
-  expect(await row.getByRole('link').evaluateAll(links => links.map(link => link.getAttribute('aria-label')))).toEqual(EXTRA_TITLES);
+  expect(await row.getByRole('link').evaluateAll(links => links.map(link => link.getAttribute('aria-label')))).toEqual(EXTRA_TITLES.map(title => `${title} (opens in a new tab)`));
   const { anchors, icons } = await rowBoxes(page);
   for (const anchor of anchors) {
     expect(anchor.top).toBeCloseTo(anchors[0]!.top, 1);
@@ -500,9 +500,9 @@ test('Narrow row', async ({ page }) => {
 
 test('Accessible name of an icon link', async ({ page }) => {
   await page.goto('/extra/');
-  const source = page.getByRole('link', { name: 'Source', exact: true });
+  const source = page.getByRole('link', { name: 'Source (opens in a new tab)', exact: true });
   await expect(source).toHaveCount(1);
-  await expect(source).toHaveAccessibleName('Source');
+  await expect(source).toHaveAccessibleName('Source (opens in a new tab)');
   // No tooltip: a title attribute would be exposed as the description and read after the name.
   await expect(source).toHaveAccessibleDescription('');
   await expect(source).not.toHaveAttribute('title');
@@ -637,6 +637,54 @@ test.describe('Map shown size without JavaScript', () => {
   });
 });
 
+/** An element's text without its visually hidden parts, and each hidden part with whether its box is at
+ * most 1 x 1 pixel (catalogue-site, External links in a new tab: the note is in the name, not on screen). */
+const shownText = (locator: Locator) => locator.evaluate(element => {
+  const hidden = [...element.querySelectorAll('.visually-hidden')].map(part => {
+    const { width, height } = part.getBoundingClientRect();
+    return [part.textContent, width <= 1 && height <= 1] as [string | null, boolean];
+  });
+  const copy = element.cloneNode(true) as Element;
+  for (const part of copy.querySelectorAll('.visually-hidden')) part.remove();
+  return { text: (copy.textContent ?? '').replace(/\s+/g, ' ').trim(), hidden };
+});
+
+// catalogue-site, External links in a new tab, on /extra/: eight icon links, then the text link Blog.
+test('Text link in a new tab', async ({ page }) => {
+  await page.goto('/extra/');
+  const blog = page.getByRole('link', { name: 'Blog (opens in a new tab)', exact: true });
+  await expect(blog).toHaveCount(1);
+  await expect(blog).toHaveAccessibleName('Blog (opens in a new tab)');
+  await expect(blog).toHaveAccessibleDescription('');
+  await expect(blog).not.toHaveAttribute('title');
+  await expect(blog).toHaveAttribute('target', '_blank');
+  await expect(blog).toHaveAttribute('rel', 'noopener noreferrer');
+  expect(await shownText(blog)).toEqual({ text: 'Blog', hidden: [[' (opens in a new tab)', true]] });
+});
+
+test('The reader keeps their place', async ({ context, page }) => {
+  // The other site is answered here, so the test makes no request outside the machine.
+  await context.route('https://blog.example.com/**', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>Blog</title><p>Blog</p>' }));
+  await page.goto('/extra/');
+  const opened = context.waitForEvent('page');
+  await page.getByRole('link', { name: 'Blog (opens in a new tab)', exact: true }).click();
+  const tab = await opened;
+  await tab.waitForLoadState();
+  expect(tab.url()).toBe('https://blog.example.com/');
+  expect(await tab.evaluate(() => window.opener)).toBeNull();
+  expect(new URL(page.url()).pathname).toBe('/extra/');
+  expect(context.pages()).toHaveLength(2);
+});
+
+// catalogue-site, Internal links in the same tab.
+test('Internal link in the same tab', async ({ context, page }) => {
+  await page.goto('/full/');
+  const card = page.locator('.home-cards .card').filter({ has: page.getByRole('heading', { name: 'Software' }) });
+  await card.getByRole('link', { name: 'Map', exact: true }).click();
+  await expect(page).toHaveURL(/\/full\/map\/$/);
+  expect(context.pages()).toEqual([page]);
+});
+
 // catalogue-site, Map backdrop: /extra/ and /extra-staff/ are the full and staff sites of a scratch catalogue
 // with spec.map.backdrop: london (test/browser/serve.mjs).
 const cityViews = ['/extra/', '/extra-staff/'];
@@ -666,11 +714,13 @@ test.describe('Map backdrop', () => {
       expect(await violations(page), view).toEqual([]);
       const credit = page.locator('.map-credit');
       await expect(credit).toHaveCount(1);
-      await expect(credit).toHaveText('Map data © OpenStreetMap contributors');
-      const link = credit.getByRole('link', { name: 'OpenStreetMap contributors' });
+      // Map credit in a new tab: the same words on screen, the new tab in the link's name only.
+      expect(await shownText(credit), view).toEqual({ text: 'Map data © OpenStreetMap contributors', hidden: [[' (opens in a new tab)', true]] });
+      const link = credit.getByRole('link', { name: 'OpenStreetMap contributors (opens in a new tab)', exact: true });
       await expect(link).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright');
       await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-      expect(await link.getAttribute('target')).toBeNull();
+      await expect(link).toHaveAttribute('target', '_blank');
+      await expect(link).not.toHaveAttribute('title');
       // Right under the map frame: the next element, starting below the frame's bottom edge.
       expect(await page.locator('[data-map] + .map-credit').count()).toBe(1);
       const frame = (await page.locator('[data-map]').boundingBox())!;
