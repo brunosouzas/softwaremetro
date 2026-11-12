@@ -272,6 +272,10 @@ const shownImages = (page: Page, selector: string) => page.locator(selector).eva
   .filter(image => getComputedStyle(image).display !== 'none')
   .map(image => [image.getAttribute('src')!.split('/').pop(), getComputedStyle(image).display]));
 
+// /extra/ lists eight icon links (test/browser/serve.mjs): their titles and icons, in order.
+const EXTRA_TITLES = ['Source', 'Catalogue', 'Profile', 'Site', 'Mail', 'Mirror', 'Docs', 'Network'];
+const EXTRA_ICONS = ['github', 'stackledger', 'linkedin', 'website', 'email', 'github', 'website', 'linkedin'];
+
 // The frame of each theme: ink in light, the dark surface's muted colour in dark; no shadow, no rim.
 const FRAME = {
   light: { width: '3px', style: 'solid', color: 'rgb(18, 18, 18)', shadow: 'none' },
@@ -321,7 +325,8 @@ for (const [how, set] of [
     for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/extra/');
       await set(page, scheme);
-      expect(await shownImages(page, '.home-external img'), scheme).toEqual([[`github-${scheme}.svg`, 'inline']]);
+      // Each anchor is an inline-flex box, so its shown icon is a flex item (computed display block).
+      expect(await shownImages(page, '.home-icon-links img'), scheme).toEqual(EXTRA_ICONS.map(icon => [`${icon}-${scheme}.svg`, 'block']));
     }
   });
 
@@ -399,6 +404,116 @@ test('Focus still visible', async ({ page }) => {
     expect(outline, scheme).toEqual({ focused: true, style: 'solid', width: '3px', color: accent });
     expect((await frameOf(page, '.line-chips .btn')).width, scheme).toBe('3px');
   }
+});
+
+// catalogue-site, Home link icon row and Home link icons, on /extra/ with its eight icon links.
+/** The boxes of the row's anchors, of each anchor's shown icon, and of the page's container. */
+const rowBoxes = (page: Page) => page.locator('ul.home-icon-links').evaluate(row => {
+  const box = (element: Element) => {
+    const { left, top, right, bottom, width, height } = element.getBoundingClientRect();
+    return { left, top, right, bottom, width, height };
+  };
+  const anchors = [...row.querySelectorAll('a')];
+  return {
+    anchors: anchors.map(box),
+    icons: anchors.map(anchor => box([...anchor.querySelectorAll('img')].find(image => getComputedStyle(image).display !== 'none')!)),
+    container: box(row.closest('.container')!),
+  };
+});
+
+test('Icons side by side', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/extra/');
+  await expect(page.locator('ul.home-icon-links')).toHaveAttribute('role', 'list');
+  const row = page.getByRole('list').filter({ has: page.getByRole('link', { name: 'Source', exact: true }) });
+  await expect(row).toHaveCount(1);
+  await expect(row.getByRole('listitem')).toHaveCount(8);
+  expect(await row.getByRole('link').evaluateAll(links => links.map(link => link.getAttribute('aria-label')))).toEqual(EXTRA_TITLES);
+  const { anchors, icons } = await rowBoxes(page);
+  for (const anchor of anchors) {
+    expect(anchor.top).toBeCloseTo(anchors[0]!.top, 1);
+    expect(anchor.width).toBeGreaterThanOrEqual(24);
+    expect(anchor.height).toBeGreaterThanOrEqual(24);
+  }
+  // More than two focus rings (3-pixel outline, 2 pixels out) between neighbours.
+  for (let at = 1; at < anchors.length; at++) expect(anchors[at]!.left - anchors[at - 1]!.right).toBeGreaterThan(10);
+  for (const icon of icons) expect([icon.width, icon.height]).toEqual([32, 32]);
+});
+
+test('Focus ring on an icon link', async ({ page }) => {
+  for (const [scheme, accent] of [['light', ACCENT.light], ['dark', ACCENT.dark]] as const) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto('/extra/');
+    const first = page.locator('ul.home-icon-links a').first();
+    // Bring the row into view first, so the focus does not scroll the ring to the viewport's edge.
+    await first.scrollIntoViewIfNeeded();
+    for (let presses = 0; presses < 80 && !(await first.evaluate(anchor => anchor === document.activeElement)); presses++) await page.keyboard.press('Tab');
+    await expect(first).toBeFocused();
+    const ring = await first.evaluate(anchor => {
+      const style = getComputedStyle(anchor);
+      const clipping: string[] = [];
+      for (let element = anchor.parentElement; element; element = element.parentElement) {
+        const { overflowX, overflowY } = getComputedStyle(element);
+        if (overflowX !== 'visible' || overflowY !== 'visible') clipping.push(`${element.tagName.toLowerCase()}.${element.className} ${overflowX} ${overflowY}`);
+        if (element.tagName === 'SECTION') break;
+      }
+      const reach = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+      const box = anchor.getBoundingClientRect();
+      return {
+        focused: anchor.matches(':focus-visible'), style: style.outlineStyle, width: style.outlineWidth, color: style.outlineColor, clipping,
+        inside: box.left - reach >= 0 && box.top - reach >= 0 && box.right + reach <= innerWidth && box.bottom + reach <= innerHeight,
+      };
+    });
+    expect(ring, scheme).toEqual({ focused: true, style: 'solid', width: '3px', color: accent, clipping: [], inside: true });
+  }
+});
+
+test('Narrow row', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto('/extra/');
+  const { anchors, container } = await rowBoxes(page);
+  expect(anchors).toHaveLength(8);
+  expect(anchors.some(anchor => Math.abs(anchor.top - anchors[0]!.top) > 1)).toBe(true);
+  const lines = [...new Set(anchors.map(anchor => Math.round(anchor.top)))].sort((a, b) => a - b);
+  const across: number[] = [];
+  for (let at = 1; at < anchors.length; at++) {
+    if (Math.round(anchors[at]!.top) === Math.round(anchors[at - 1]!.top)) across.push(anchors[at]!.left - anchors[at - 1]!.right);
+  }
+  expect(across.length).toBeGreaterThan(0);
+  for (const gap of across) {
+    expect(gap).toBeGreaterThan(10);
+    expect(gap).toBeCloseTo(across[0]!, 1);
+  }
+  // The gap between lines equals the gap across: no line box adds space under an anchor.
+  for (let at = 1; at < lines.length; at++) {
+    const above = anchors.filter(anchor => Math.round(anchor.top) === lines[at - 1]);
+    const below = anchors.filter(anchor => Math.round(anchor.top) === lines[at]);
+    expect(Math.min(...below.map(anchor => anchor.top)) - Math.max(...above.map(anchor => anchor.bottom))).toBeCloseTo(across[0]!, 1);
+  }
+  for (const anchor of anchors) {
+    expect(anchor.left).toBeGreaterThanOrEqual(container.left);
+    expect(anchor.right).toBeLessThanOrEqual(container.right);
+    expect(anchor.width).toBeGreaterThanOrEqual(24);
+    expect(anchor.height).toBeGreaterThanOrEqual(24);
+  }
+});
+
+test('Accessible name of an icon link', async ({ page }) => {
+  await page.goto('/extra/');
+  const source = page.getByRole('link', { name: 'Source', exact: true });
+  await expect(source).toHaveCount(1);
+  await expect(source).toHaveAccessibleName('Source');
+  // No tooltip: a title attribute would be exposed as the description and read after the name.
+  await expect(source).toHaveAccessibleDescription('');
+  await expect(source).not.toHaveAttribute('title');
+});
+
+test('No combined image', async ({ page }) => {
+  await page.goto('/extra/');
+  const backgrounds = await page.locator('ul.home-icon-links, ul.home-icon-links li, ul.home-icon-links a, ul.home-icon-links img')
+    .evaluateAll(elements => elements.map(element => getComputedStyle(element).backgroundImage));
+  expect(backgrounds).toHaveLength(1 + 8 + 8 + 16);
+  expect(new Set(backgrounds)).toEqual(new Set(['none']));
 });
 
 test('The Reports page under the CSP', async ({ page }) => {

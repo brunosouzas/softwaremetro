@@ -9,6 +9,12 @@ import { href, rootFor, site } from '../lib/site';
 const root = rootFor(Astro.url.pathname);
 const plural = (count: number, word: string) => `${count} ${count === 1 ? word : `${word}s`}`;
 const skills = site.skills;
+// Home links and Home link icons: the links with an icon are a row of icon-only anchors, before the
+// others; each group keeps the order given. An icon link's description is not shown.
+type HomeLink = { title: string; url: string; description?: string; icon?: string };
+const links: HomeLink[] = site.home.links;
+const iconLinks = links.filter(link => link.icon);
+const textLinks = links.filter(link => !link.icon);
 ---
 
 <Base title={site.title} current="home">
@@ -56,14 +62,25 @@ const skills = site.skills;
       site.home.links.length > 0 && (
         <>
           <h2>Links</h2>
-          <ul class="home-external">
-            {site.home.links.map((link: { title: string; url: string; description?: string; icon?: string }) => (
-              <li>
-                <a href={link.url} rel="noopener noreferrer">{link.icon && <><img class="link-icon themed-light" src={href(root, `link-icons/${link.icon}-light.svg`)} alt="" width="24" height="24" /><img class="link-icon themed-dark" src={href(root, `link-icons/${link.icon}-dark.svg`)} alt="" width="24" height="24" /></>}{link.title}</a>
-                {link.description && <span class="muted"> · {link.description}</span>}
-              </li>
-            ))}
-          </ul>
+          {iconLinks.length > 0 && (
+            <ul class="home-icon-links" role="list">
+              {iconLinks.map(link => (
+                <li>
+                  <a href={link.url} rel="noopener noreferrer" aria-label={link.title}><img class="themed-light" src={href(root, `link-icons/${link.icon}-light.svg`)} alt="" width="32" height="32" /><img class="themed-dark" src={href(root, `link-icons/${link.icon}-dark.svg`)} alt="" width="32" height="32" /></a>
+                </li>
+              ))}
+            </ul>
+          )}
+          {textLinks.length > 0 && (
+            <ul class="home-external">
+              {textLinks.map(link => (
+                <li>
+                  <a href={link.url} rel="noopener noreferrer">{link.title}</a>
+                  {link.description && <span class="muted"> · {link.description}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
         </>
       )
     }
